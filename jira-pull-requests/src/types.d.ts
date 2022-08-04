@@ -7,12 +7,6 @@ type UserGithubLogin = string;
 type UserMappingDbKeys = "name" | "jira_id" | "github_id" | "github_login";
 type UserMappingDbByKeys = `by_${UserMappingDbKeys}`;
 
-const keys: UserMappingDbKeys[] = [
-  "name",
-  "jira_id",
-  "github_id",
-  "github_login",
-];
 type UserMappingDbRow = [UserName, UserJiraId, UserGithubId, UserGithubLogin];
 
 type ReviewType = "code_review" | "test" | "other";

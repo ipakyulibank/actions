@@ -1,3 +1,10 @@
+const keys: UserMappingDbKeys[] = [
+  "name",
+  "jira_id",
+  "github_id",
+  "github_login",
+];
+
 function getWhatKey(what: UserMappingDbKeys): number {
   validateWhat(what);
   return keys.indexOf(what);
