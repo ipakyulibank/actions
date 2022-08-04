@@ -1,2 +1,7 @@
 # actions
-Github Actions
+
+Github Actions repository
+
+## Pull Requests Integration into Jira Issues
+
+[README.md](jira-pull-requests/)
