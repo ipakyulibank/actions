@@ -1,0 +1,28 @@
+name: 'Jira Pull Request to Issue'
+author: Zafar Turkmenov
+description: 'Greet someone and record the time'
+inputs:
+  github_token:
+    description: 'Github PAT'
+    required: true
+  jira_url:
+    description: 'Jira URL (eg: aplussolutions.atlassian.net)'
+    required: true
+  jira_user:
+    description: 'Jira User'
+    required: true
+  jira_token:
+    description: 'Jira User Token'
+    required: true
+  jira_project_key:
+    description: "Project Key (eg. IYM)"
+    required: true
+  user_mappings:
+    description: "User Mappings JSON Array [name, jira_id, github_id, github_login][]"
+    required: true
+outputs:
+  affected_issues:
+    description: JSON decoded array of Jira Issue Keys
+runs:
+  using: 'node16'
+  main: 'dist/index.js'

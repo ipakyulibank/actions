@@ -1,0 +1,30 @@
+name: Build and Test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 16.x
+      - uses: actions/checkout@v2
+      - run: cd jira-pull-requests && npm ci
+      - run: cd jira-pull-requests && npm run lint
+      - run: cd jira-pull-requests && npm test
+      
+      - name: Rebuild the index.js file
+        run: cd jira-pull-requests && npm run build
+
+      - name: Compare the expected and actual dist/ directories
+        run: |
+          if [ "$(git diff --ignore-space-at-eol jira-pull-requests/dist/ | wc -l)" -gt "0" ]; then
+            echo "Detected uncommitted changes after build.  See status below:"
+            git diff
+            exit 1
+          fi
