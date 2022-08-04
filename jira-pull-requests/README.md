@@ -124,7 +124,7 @@ jobs:
     steps:
       - name: Integration
         id: jira-issues
-        uses: ipakyulibank/github-actions/jira-pull-requests@v1
+        uses: ipakyulibank/actions/jira-pull-requests@v1
         with:
           github_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           jira_url: ${{ secrets.JIRA_URL }}
