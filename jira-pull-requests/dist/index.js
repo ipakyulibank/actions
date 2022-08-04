@@ -15943,6 +15943,12 @@ const assignIssue = async function (jira, issue_key, jira_user_id) {
 };
 
 ;// CONCATENATED MODULE: ./src/reference/user-mapping.ts
+const keys = [
+    "name",
+    "jira_id",
+    "github_id",
+    "github_login",
+];
 function getWhatKey(what) {
     validateWhat(what);
     return keys.indexOf(what);
