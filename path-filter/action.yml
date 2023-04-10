@@ -1,0 +1,10 @@
+name: 'Path filter'
+author: Saydakram Aminjonov
+description: 'Greet someone and record the time'
+inputs:
+outputs:
+  result:
+    description: Path Filter returns a boolean
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
