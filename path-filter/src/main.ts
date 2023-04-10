@@ -5,6 +5,7 @@ import { minimatch } from "minimatch";
 
 export default async function (): Promise<string> {
   const github_token = core.getInput("github_token", { required: true });
+  const filter = core.getInput("filter", { required: true });
   let result;
 
   const octokit = github.getOctokit(github_token);
@@ -29,10 +30,9 @@ export default async function (): Promise<string> {
       throw new Error('Only released type of release is accepted');
     } else if (context.payload.release.prerelease === true) {
       throw new Error('Prerelease is not accepted in this step');
-    } else if (!process.env.FILTER) {
+    } else if (!filter) {
       throw new Error('ENV var FILTER is mandatory');
     }
-    const filter = process.env.FILTER;
   
     
   
@@ -67,7 +67,7 @@ export default async function (): Promise<string> {
   
     await exec(`git status`)
   
-    let git_diff_result: string[] = [];
+    const git_diff_result: string[] = [];
   
     let options = {};
     options = {

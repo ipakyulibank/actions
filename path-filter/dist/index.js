@@ -11782,6 +11782,7 @@ minimatch.unescape = unescape_unescape;
 
 /* harmony default export */ async function main() {
     const github_token = core.getInput("github_token", { required: true });
+    const filter = core.getInput("filter", { required: true });
     let result;
     const octokit = github.getOctokit(github_token);
     const context = github.context;
@@ -11804,10 +11805,9 @@ minimatch.unescape = unescape_unescape;
         else if (context.payload.release.prerelease === true) {
             throw new Error('Prerelease is not accepted in this step');
         }
-        else if (!process.env.FILTER) {
+        else if (!filter) {
             throw new Error('ENV var FILTER is mandatory');
         }
-        const filter = process.env.FILTER;
         const current_release_tag = context.payload.release.tag_name;
         const releases_opts = octokit.rest.repos.listReleases.endpoint.merge({
             owner,
@@ -11833,7 +11833,7 @@ minimatch.unescape = unescape_unescape;
         }
         await (0,external_child_process_namespaceObject.exec)(`git fetch --tags`);
         await (0,external_child_process_namespaceObject.exec)(`git status`);
-        let git_diff_result = [];
+        const git_diff_result = [];
         let options = {};
         options = {
             signal: (data) => {
@@ -11856,7 +11856,6 @@ minimatch.unescape = unescape_unescape;
 
 (async () => {
     try {
-        // `who-to-greet` input defined in action metadata file
         const result = await main();
         core.setOutput('result', result);
     }

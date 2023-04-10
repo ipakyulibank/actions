@@ -1,0 +1,18 @@
+name: Validate path of pull request
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  path-filtering:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 16.x
+      - name: Validate path
+        uses: ./path-filter
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          filter: '*'
