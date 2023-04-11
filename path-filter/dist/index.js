@@ -471,7 +471,7 @@ exports.prepareKeyValueMessage = exports.issueFileCommand = void 0;
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const fs = __importStar(__nccwpck_require__(7147));
 const os = __importStar(__nccwpck_require__(2037));
-const uuid_1 = __nccwpck_require__(5840);
+const uuid_1 = __nccwpck_require__(3663);
 const utils_1 = __nccwpck_require__(5278);
 function issueFileCommand(command, message) {
     const filePath = process.env[`GITHUB_${command}`];
@@ -7216,7 +7216,7 @@ exports.getUserAgent = getUserAgent;
 
 /***/ }),
 
-/***/ 5840:
+/***/ 3663:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 
@@ -11775,15 +11775,14 @@ minimatch.Minimatch = Minimatch;
 minimatch.escape = escape_escape;
 minimatch.unescape = unescape_unescape;
 //# sourceMappingURL=index.js.map
-;// CONCATENATED MODULE: ./src/main.ts
+;// CONCATENATED MODULE: ./src/functions.ts
 
 
 
 
-/* harmony default export */ async function main() {
+async function privateValidator() {
     const github_token = core.getInput("github_token", { required: true });
     const filter = core.getInput("filter_string", { required: true });
-    let result;
     const octokit = github.getOctokit(github_token);
     const context = github.context;
     const owner = context.repo.owner;
@@ -11795,54 +11794,137 @@ minimatch.unescape = unescape_unescape;
      * 3. Has previous releases
      * 4. has ENV FILTER var
      */
+    if (context.eventName !== 'release') {
+        throw new Error('Only releases accepted');
+    }
+    else if (context.payload.action !== 'released') {
+        throw new Error('Only released type of release is accepted');
+    }
+    else if (context.payload.release.prerelease === true) {
+        throw new Error('Prerelease is not accepted in this step');
+    }
+    else if (!filter) {
+        throw new Error('ENV var FILTER is mandatory');
+    }
+    core.debug("base validations completed");
+    const current_release_tag = context.payload.release.tag_name;
+    const releases_opts = octokit.rest.repos.listReleases.endpoint.merge({
+        owner,
+        repo,
+    });
+    const releases = await octokit.paginate(releases_opts);
+    let found_current = false;
+    let found_prev = false;
+    for await (const release of releases) {
+        if (release.draft || release.prerelease) {
+            continue;
+        }
+        if (release.tag_name === current_release_tag) {
+            found_current = true;
+        }
+        else if (found_current) {
+            found_prev = release.tag_name;
+            break;
+        }
+    }
+    if (found_prev === false) {
+        throw new Error('Could not find previous release');
+    }
+    await (0,external_child_process_namespaceObject.exec)(`git fetch --tags`);
+    await (0,external_child_process_namespaceObject.exec)(`git status`);
+    const git_diff_result = [];
+    let options = {};
+    options = {
+        signal: (data) => {
+            git_diff_result.push(data.trim());
+        }
+    };
+    core.info(`Searching in diff between ${found_prev} ${current_release_tag} using filter: ${filter}`);
+    await (0,external_child_process_namespaceObject.spawn)('git', ['diff', '--name-only', `tags/${found_prev}`, `tags/${current_release_tag}`], options);
+    const result = git_diff_result.some((v) => minimatch(v, filter));
+    core.debug(`git difference of multiple tags is ${result}`);
+    return result;
+}
+async function publicValidator() {
+    const github_token = core.getInput("github_token", { required: true });
+    const filter = core.getInput("filter_string", { required: true });
+    const octokit = github.getOctokit(github_token);
+    const context = github.context;
+    const owner = context.repo.owner;
+    const repo = context.repo.repo;
+    let base, head;
+    switch (context.eventName) {
+        case 'pull_request':
+            base = context.payload.pull_request?.base?.sha;
+            head = context.payload.pull_request?.head?.sha;
+            break;
+        case 'push':
+            base = context.payload.before;
+            head = context.payload.after;
+            break;
+        default:
+            core.setFailed(`This action only supports pull requests and pushes, ${context.eventName} events are not supported. ` +
+                "Please submit an issue.");
+    }
+    // Log the base and head commits
+    core.info(`Base commit: ${base}`);
+    core.info(`Head commit: ${head}`);
+    /** Validation */
+    if (!filter) {
+        core.setFailed('ENV var FILTER is mandatory');
+    }
+    // Ensure that the base and head properties are set on the payload.
+    if (!base || !head) {
+        core.setFailed(`The base and head commits are missing from the payload for this ${context.eventName} event. ` +
+            "Please submit an issue.");
+    }
+    const compare_opts = octokit.rest.repos.compareCommits.endpoint.merge({
+        base,
+        head,
+        owner,
+        repo
+    });
+    const diffs = await octokit.paginate(compare_opts);
+    const files = new Set();
+    for await (const diff of diffs) {
+        for (const file of diff.files) {
+            files.add(file.filename);
+        }
+    }
+    const result = Array.from(files).some((v) => minimatch(v, filter));
+    core.debug(`at least 1 file matching 'filter_string' is ${result}`);
+    return result;
+}
+
+;// CONCATENATED MODULE: ./src/main.ts
+
+
+
+/* harmony default export */ async function main() {
+    let result = false;
+    const context = github.context;
     try {
-        if (context.eventName !== 'release') {
-            throw new Error('Only releases accepted');
-        }
-        else if (context.payload.action !== 'released') {
-            throw new Error('Only released type of release is accepted');
-        }
-        else if (context.payload.release.prerelease === true) {
-            throw new Error('Prerelease is not accepted in this step');
-        }
-        else if (!filter) {
-            throw new Error('ENV var FILTER is mandatory');
-        }
-        const current_release_tag = context.payload.release.tag_name;
-        const releases_opts = octokit.rest.repos.listReleases.endpoint.merge({
-            owner,
-            repo,
-        });
-        const releases = await octokit.paginate(releases_opts);
-        let found_current = false;
-        let found_prev = false;
-        for await (const release of releases) {
-            if (release.draft || release.prerelease) {
-                continue;
-            }
-            if (release.tag_name === current_release_tag) {
-                found_current = true;
-            }
-            else if (found_current) {
-                found_prev = release.tag_name;
+        core.info(`eventName is ${context.eventName}`);
+        switch (context.eventName) {
+            case "release":
+                {
+                    core.startGroup(`privateValidator() function is fired`);
+                    result = await privateValidator();
+                    core.endGroup();
+                }
                 break;
+            case "pull_request":
+            case "push":
+                {
+                    core.startGroup(`publicValidator() function is fired`);
+                    result = await publicValidator();
+                    core.endGroup();
+                }
+                break;
+            default: {
+                throw new Error(`This eventName (${context.eventName}) is not handled`);
             }
         }
-        if (found_prev === false) {
-            throw new Error('Could not find previous release');
-        }
-        await (0,external_child_process_namespaceObject.exec)(`git fetch --tags`);
-        await (0,external_child_process_namespaceObject.exec)(`git status`);
-        const git_diff_result = [];
-        let options = {};
-        options = {
-            signal: (data) => {
-                git_diff_result.push(data.trim());
-            }
-        };
-        core.info(`Searching in diff between ${found_prev} ${current_release_tag} using filter: ${filter}`);
-        await (0,external_child_process_namespaceObject.spawn)('git', ['diff', '--name-only', `tags/${found_prev}`, `tags/${current_release_tag}`], options);
-        result = git_diff_result.some((v) => minimatch(v, filter));
     }
     catch (error) {
         core.setFailed(error.message);

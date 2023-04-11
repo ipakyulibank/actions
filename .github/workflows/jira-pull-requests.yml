@@ -18,8 +18,3 @@ jobs:
           jira_token: ${{ secrets.JIRA_BOT_TOKEN }}
           jira_project_key: IYM
           user_mappings: ${{ secrets.USER_MAPPINGS_JSON }}
-      - name: Path filter validation
-        uses: ./path-filter
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          filter_string: '*'
