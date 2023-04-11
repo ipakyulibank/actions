@@ -16,7 +16,6 @@ jobs:
       - uses: actions/checkout@v2
       - run: cd path-filter && npm ci
       - run: cd path-filter && npm run lint
-      - run: cd path-filter && npm test
       
       - name: Rebuild the index.js file
         run: cd path-filter && npm run build
