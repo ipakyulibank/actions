@@ -2,6 +2,12 @@ name: 'Path filter'
 author: Saydakram Aminjonov
 description: 'Greet someone and record the time'
 inputs:
+  github_token:
+    description: 'Github PAT'
+    required: true
+  filter_string:
+    description: 'Filter string for path'
+    required: true
 outputs:
   result:
     description: Path Filter returns a boolean

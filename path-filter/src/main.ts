@@ -5,7 +5,7 @@ import { minimatch } from "minimatch";
 
 export default async function (): Promise<string> {
   const github_token = core.getInput("github_token", { required: true });
-  const filter = core.getInput("filter", { required: true });
+  const filter = core.getInput("filter_string", { required: true });
   let result;
 
   const octokit = github.getOctokit(github_token);

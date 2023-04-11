@@ -11782,7 +11782,7 @@ minimatch.unescape = unescape_unescape;
 
 /* harmony default export */ async function main() {
     const github_token = core.getInput("github_token", { required: true });
-    const filter = core.getInput("filter", { required: true });
+    const filter = core.getInput("filter_string", { required: true });
     let result;
     const octokit = github.getOctokit(github_token);
     const context = github.context;
