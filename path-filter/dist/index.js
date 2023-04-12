@@ -11842,7 +11842,7 @@ async function privateValidator() {
     core.info(`Searching in diff between ${found_prev} ${current_release_tag} using filter: ${filter}`);
     await (0,external_child_process_namespaceObject.spawn)('git', ['diff', '--name-only', `tags/${found_prev}`, `tags/${current_release_tag}`], options);
     core.debug(`Files of compared commits: ${JSON.stringify(git_diff_result)}`);
-    const result = git_diff_result.some((v) => minimatch(v, filter));
+    const result = git_diff_result.some((v) => minimatch(v, filter, { matchBase: true }));
     core.debug(`git difference of multiple tags is ${result}`);
     return result;
 }
@@ -11893,7 +11893,7 @@ async function publicValidator() {
         }
     }
     core.debug(`Files of compared commits: ${Array.from(files)}`);
-    const result = Array.from(files).some((v) => minimatch(v, filter));
+    const result = Array.from(files).some((v) => minimatch(v, filter, { matchBase: true }));
     core.debug(`at least 1 file matching 'filter_string' is ${result}`);
     return result;
 }
