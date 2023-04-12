@@ -78,7 +78,7 @@ export async function privateValidator (): Promise<boolean> {
 
   core.debug(`Files of compared commits: ${ JSON.stringify( git_diff_result ) }`);
 
-  const result = git_diff_result.some((v) => minimatch(v, filter))
+  const result = git_diff_result.some((v) => minimatch(v, filter, { matchBase: true }))
 
   core.debug(`git difference of multiple tags is ${result}`);
 
@@ -146,7 +146,7 @@ export async function publicValidator (): Promise<boolean> {
 
   core.debug(`Files of compared commits: ${ Array.from( files ) }`);
   
-  const result = Array.from(files).some((v: any) => minimatch(v, filter))
+  const result = Array.from(files).some((v: any) => minimatch(v, filter, { matchBase: true }))
 
   core.debug(`at least 1 file matching 'filter_string' is ${result}`);
 
