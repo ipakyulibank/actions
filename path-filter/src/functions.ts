@@ -75,6 +75,9 @@ export async function privateValidator (): Promise<boolean> {
   core.info(`Searching in diff between ${found_prev} ${current_release_tag} using filter: ${filter}`);
 
   await spawn('git',['diff', '--name-only', `tags/${found_prev}`, `tags/${current_release_tag}`], options)
+
+  core.debug(`Files of compared commits: ${ JSON.stringify( git_diff_result ) }`);
+
   const result = git_diff_result.some((v) => minimatch(v, filter))
 
   core.debug(`git difference of multiple tags is ${result}`);
@@ -140,6 +143,8 @@ export async function publicValidator (): Promise<boolean> {
       files.add(file.filename);
     }
   }
+
+  core.debug(`Files of compared commits: ${ Array.from( files ) }`);
   
   const result = Array.from(files).some((v: any) => minimatch(v, filter))
 
