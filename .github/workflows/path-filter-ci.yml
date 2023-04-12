@@ -1,4 +1,4 @@
-name: Build and Test
+name: Build and Test Path Filter
 
 on:
   pull_request:
