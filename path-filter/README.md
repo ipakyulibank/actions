@@ -2,11 +2,11 @@
 
 ## Описание
 
-Данный [github action](https://docs.github.com/en/actions) создан для проверки пути.
+Данный [github action](https://docs.github.com/en/actions) создан для проверки есть ли изменения в файлах по шаблону [glob](https://en.wikipedia.org/wiki/Glob_(programming)).
 
 ### Тригер
 
-Данный Action должен запускаться по событию [pull_request_review](https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request_review), а именно по типу `submitted`.
+Данный Action должен запускаться по событию [release](https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#release).types, а именно по типу `published`.
 
 ### Принцип работы (логика)
 
@@ -21,7 +21,7 @@
       - Проверяет, указана ли filter_string в ENV
       - Убедитесь, что для полезной нагрузки заданы свойства base и head
       - Имя необходимых файлов загружается через github.paginate()
-2. Результат сравнения требуемых тегов возвращается в виде булеан
+2. Результат сравнения требуемых тегов возвращается в виде '1' или '0'
 
 
 ## Входные параметры (input)
@@ -47,10 +47,17 @@
 
 ##  Пример использования
 ```yaml
-name: "Awesome Path Filter Action"
+name: "Path Filter Action"
 on:
-  pull_request_review:
-    types: [submitted]
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  release:
+    types:
+      - published
 
 jobs:
   validate:
@@ -59,8 +66,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Path filter validation
-        uses: ipakyulibank/actions/path-filter@v1
+        uses: ipakyulibank/actions/path-filter@betatest
+        id: pathfilter
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          filter_string: '*'
+          filter_string: '*path-filter.yml'
+      - name: Show result    
+        run: echo "RESULT IS ${{ steps.pathfilter.outputs.result }}"
+
 ```

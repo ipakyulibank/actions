@@ -1,0 +1,22 @@
+name: 'Notify'
+author: Saydakram Aminjonov
+description: 'Telegram notification sender'
+inputs:
+  BOT_TOKEN:
+    description: 'Telegram bot token'
+    required: true
+  CHAT_ID:
+    description: 'Telegram chat id'
+    required: true
+  BODY:
+    description: 'A message to be sent to Telegram'
+    required: true
+  PARSE_MODE:
+    description: 'parse mode for message format'
+    required: true
+outputs:
+  result:
+    description: Sent message result
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
