@@ -3,7 +3,7 @@ import * as github from "@actions/github";
 import { exec, spawn } from "child_process";
 import { minimatch } from "minimatch";
 
-export async function privateValidator (): Promise<boolean> {
+export async function localComparison (): Promise<boolean> {
   const github_token = core.getInput("github_token", { required: true });
   const filter = core.getInput("filter_string", { required: true });
 
@@ -85,7 +85,7 @@ export async function privateValidator (): Promise<boolean> {
   return result;
 }
 
-export async function publicValidator (): Promise<boolean> {
+export async function githubComparison (): Promise<boolean> {
   const github_token = core.getInput("github_token", { required: true });
   const filter = core.getInput("filter_string", { required: true });
 

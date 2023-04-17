@@ -10763,30 +10763,22 @@ axios.default = axios;
 // this module should only have a default export
 /* harmony default export */ const lib_axios = (axios);
 
+;// CONCATENATED MODULE: ./src/reference/errors.ts
+const ErrorTypes = {
+    message_length_too_long: "Message length is too long"
+};
+
 ;// CONCATENATED MODULE: ./src/utils.ts
 
+
 const send_notification = async function (url, options) {
-    let result;
-    if (options.text.length > 3900) {
-        let full_text = options.text;
-        while (full_text.length > 0) {
-            const text = full_text.substring(0, 3900);
-            full_text = full_text.slice(3900);
-            result = await request(url, {
-                chat_id: options.chat_id,
-                parse_mode: options.parse_mode,
-                text
-            });
-        }
+    if (options.text.length > 3990) {
+        throw new Error(ErrorTypes.message_length_too_long);
     }
-    else {
-        result = await request(url, options);
-    }
-    return result;
-};
-const request = function (url, options) {
     return lib_axios.post(url, options);
+    ;
 };
+const stringify = (data) => JSON.stringify(data);
 
 ;// CONCATENATED MODULE: ./src/main.ts
 
@@ -10797,38 +10789,39 @@ const request = function (url, options) {
     const body = core.getInput("BODY", { required: true });
     const parse_mode = core.getInput("PARSE_MODE", { required: true });
     const url = 'https://api.telegram.org/bot';
-    let result = false;
+    if (core.isDebug()) {
+        core.debug(stringify({
+            bot_token,
+            chat_id,
+            body,
+            parse_mode
+        }));
+    }
     try {
         const r = await send_notification(`${url}${bot_token}/sendMessage`, {
             chat_id,
             parse_mode,
             text: body
         });
-        result = true;
-        core.debug(JSON.stringify({
+        core.debug(stringify({
             message: "axios_response",
             response_body: r?.data,
             status: r?.status
         }));
+        core.setOutput('result', '1');
     }
     catch (error) {
         core.setFailed(error?.message);
-        result = false;
     }
-    return result;
 }
 
 ;// CONCATENATED MODULE: ./index.ts
 
 
 (async () => {
-    try {
-        const result = await main();
-        core.setOutput('result', result);
-    }
-    catch (error) {
-        core.setFailed(error?.message);
-    }
+    core.debug("Process started...");
+    await main();
+    core.debug("Process finished...");
 })();
 
 })();

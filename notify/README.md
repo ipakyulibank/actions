@@ -69,7 +69,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Make Template
-        id: template
+        id: notifyTemplate
         uses: actions/github-script@v6
         with:
           script: |
@@ -78,13 +78,14 @@ jobs:
             core.setOutput('template', tgMsg);
 
       - name: Comment about succesful deploy
+        id: notify
         uses: ipakyulibank/actions/notify@betatest
         with:
           BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          BODY: ${{ steps.template.outputs.template }}
+          BODY: ${{ steps.notifyTemplate.outputs.template }}
           PARSE_MODE: MarkdownV2
       - name: Show result
-        run: echo "RESULT IS ${{ steps.pathfilter.outputs.result }}"
+        run: echo "RESULT IS ${{ steps.notify.outputs.result }}"
 
 ```

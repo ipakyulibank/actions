@@ -11780,7 +11780,7 @@ minimatch.unescape = unescape_unescape;
 
 
 
-async function privateValidator() {
+async function localComparison() {
     const github_token = core.getInput("github_token", { required: true });
     const filter = core.getInput("filter_string", { required: true });
     const octokit = github.getOctokit(github_token);
@@ -11846,7 +11846,7 @@ async function privateValidator() {
     core.debug(`git difference of multiple tags is ${result}`);
     return result;
 }
-async function publicValidator() {
+async function githubComparison() {
     const github_token = core.getInput("github_token", { required: true });
     const filter = core.getInput("filter_string", { required: true });
     const octokit = github.getOctokit(github_token);
@@ -11910,16 +11910,16 @@ async function publicValidator() {
         switch (context.eventName) {
             case "release":
                 {
-                    core.startGroup(`privateValidator() function is fired`);
-                    result = await privateValidator();
+                    core.startGroup(`localComparison() function is fired`);
+                    result = await localComparison();
                     core.endGroup();
                 }
                 break;
             case "pull_request":
             case "push":
                 {
-                    core.startGroup(`publicValidator() function is fired`);
-                    result = await publicValidator();
+                    core.startGroup(`githubComparison() function is fired`);
+                    result = await githubComparison();
                     core.endGroup();
                 }
                 break;
@@ -11940,11 +11940,15 @@ async function publicValidator() {
 
 (async () => {
     try {
+        core.debug("Process started...");
         const result = await main();
         core.setOutput('result', result);
     }
     catch (error) {
         core.setFailed(error?.message);
+    }
+    finally {
+        core.debug("Process finished...");
     }
 })();
 

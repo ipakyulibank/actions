@@ -1,6 +1,6 @@
 import * as core from "@actions/core";
 import * as github from "@actions/github";
-import { privateValidator, publicValidator } from "./functions";
+import { localComparison, githubComparison } from "./functions";
 
 export default async function (): Promise<string> {
   let result = false;
@@ -12,17 +12,17 @@ export default async function (): Promise<string> {
 
     switch ( context.eventName ) {
       case "release": {
-        core.startGroup(`privateValidator() function is fired`);
+        core.startGroup(`localComparison() function is fired`);
         
-        result = await privateValidator();
+        result = await localComparison();
         
         core.endGroup();
       } break;
       
       case "pull_request": case "push": {
-        core.startGroup(`publicValidator() function is fired`);
+        core.startGroup(`githubComparison() function is fired`);
 
-        result = await publicValidator();
+        result = await githubComparison();
 
         core.endGroup();
       } break;
