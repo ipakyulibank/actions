@@ -10768,11 +10768,15 @@ const ErrorTypes = {
     message_length_too_long: "Message length is too long"
 };
 
+;// CONCATENATED MODULE: ./src/configs/index.ts
+const TG_MESSAGE_MAX_LENGTH = 3990;
+
 ;// CONCATENATED MODULE: ./src/utils.ts
 
 
+
 const send_notification = async function (url, options) {
-    if (options.text.length > 3990) {
+    if (options.text.length > TG_MESSAGE_MAX_LENGTH) {
         throw new Error(ErrorTypes.message_length_too_long);
     }
     return lib_axios.post(url, options);

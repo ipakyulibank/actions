@@ -13,6 +13,7 @@
   "author": "Mr_Sdk",
   "license": "ISC",
   "devDependencies": {
+    "@types/jest": "^29.5.0",
     "@typescript-eslint/eslint-plugin": "^5.58.0",
     "@vercel/ncc": "^0.36.1",
     "eslint": "^8.38.0",
