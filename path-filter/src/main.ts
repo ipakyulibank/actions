@@ -1,6 +1,7 @@
 import * as core from "@actions/core";
 import * as github from "@actions/github";
 import { localComparison, githubComparison } from "./functions";
+import { GithubEventTypes } from "./reference/constants";
 
 export default async function (): Promise<string> {
   let result = false;
@@ -11,7 +12,7 @@ export default async function (): Promise<string> {
     core.info(`eventName is ${context.eventName}`)
 
     switch ( context.eventName ) {
-      case "release": {
+      case GithubEventTypes.release: {
         core.startGroup(`localComparison() function is fired`);
         
         result = await localComparison();
@@ -19,7 +20,7 @@ export default async function (): Promise<string> {
         core.endGroup();
       } break;
       
-      case "pull_request": case "push": {
+      case GithubEventTypes.pull_request: case GithubEventTypes.push: {
         core.startGroup(`githubComparison() function is fired`);
 
         result = await githubComparison();
@@ -33,7 +34,7 @@ export default async function (): Promise<string> {
     }
   
     
-  } catch (error: any) {
+  } catch (error: any) {    
     core.setFailed(error.message)
   }
 

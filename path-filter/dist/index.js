@@ -471,7 +471,7 @@ exports.prepareKeyValueMessage = exports.issueFileCommand = void 0;
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const fs = __importStar(__nccwpck_require__(7147));
 const os = __importStar(__nccwpck_require__(2037));
-const uuid_1 = __nccwpck_require__(3663);
+const uuid_1 = __nccwpck_require__(5840);
 const utils_1 = __nccwpck_require__(5278);
 function issueFileCommand(command, message) {
     const filePath = process.env[`GITHUB_${command}`];
@@ -7216,7 +7216,7 @@ exports.getUserAgent = getUserAgent;
 
 /***/ }),
 
-/***/ 3663:
+/***/ 5840:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 
@@ -11775,7 +11775,15 @@ minimatch.Minimatch = Minimatch;
 minimatch.escape = escape_escape;
 minimatch.unescape = unescape_unescape;
 //# sourceMappingURL=index.js.map
+;// CONCATENATED MODULE: ./src/reference/constants.ts
+const GithubEventTypes = {
+    release: "release",
+    pull_request: "pull_request",
+    push: "push"
+};
+
 ;// CONCATENATED MODULE: ./src/functions.ts
+
 
 
 
@@ -11794,7 +11802,7 @@ async function localComparison() {
      * 3. Has previous releases
      * 4. has ENV FILTER var
      */
-    if (context.eventName !== 'release') {
+    if (context.eventName !== GithubEventTypes.release) {
         throw new Error('Only releases accepted');
     }
     else if (context.payload.action !== 'released') {
@@ -11855,11 +11863,11 @@ async function githubComparison() {
     const repo = context.repo.repo;
     let base, head;
     switch (context.eventName) {
-        case 'pull_request':
+        case GithubEventTypes.pull_request:
             base = context.payload.pull_request?.base?.sha;
             head = context.payload.pull_request?.head?.sha;
             break;
-        case 'push':
+        case GithubEventTypes.push:
             base = context.payload.before;
             head = context.payload.after;
             break;
@@ -11902,21 +11910,22 @@ async function githubComparison() {
 
 
 
+
 /* harmony default export */ async function main() {
     let result = false;
     const context = github.context;
     try {
         core.info(`eventName is ${context.eventName}`);
         switch (context.eventName) {
-            case "release":
+            case GithubEventTypes.release:
                 {
                     core.startGroup(`localComparison() function is fired`);
                     result = await localComparison();
                     core.endGroup();
                 }
                 break;
-            case "pull_request":
-            case "push":
+            case GithubEventTypes.pull_request:
+            case GithubEventTypes.push:
                 {
                     core.startGroup(`githubComparison() function is fired`);
                     result = await githubComparison();

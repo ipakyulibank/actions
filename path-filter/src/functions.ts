@@ -2,6 +2,7 @@ import * as core from "@actions/core";
 import * as github from "@actions/github";
 import { exec, spawn } from "child_process";
 import { minimatch } from "minimatch";
+import { GithubEventTypes } from "./reference/constants";
 
 export async function localComparison (): Promise<boolean> {
   const github_token = core.getInput("github_token", { required: true });
@@ -22,7 +23,7 @@ export async function localComparison (): Promise<boolean> {
    * 4. has ENV FILTER var
    */
 
-  if(context.eventName !== 'release') {
+  if(context.eventName !== GithubEventTypes.release) {
     throw new Error('Only releases accepted');
   } else if (context.payload.action !== 'released') {
     throw new Error('Only released type of release is accepted');
@@ -98,11 +99,11 @@ export async function githubComparison (): Promise<boolean> {
   let base, head;
     
   switch (context.eventName) {
-    case 'pull_request':
+    case GithubEventTypes.pull_request:
       base = context.payload.pull_request?.base?.sha
       head = context.payload.pull_request?.head?.sha
       break
-    case 'push':
+    case GithubEventTypes.push:
       base = context.payload.before
       head = context.payload.after
       break
