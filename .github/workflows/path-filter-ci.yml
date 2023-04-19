@@ -2,9 +2,15 @@ name: Build and Test Path Filter
 
 on:
   pull_request:
+    branches:
+      - master
+    paths:
+      - path-filter/**
   push:
     branches:
       - master
+    paths:
+      - path-filter/**
 
 jobs:
   build:

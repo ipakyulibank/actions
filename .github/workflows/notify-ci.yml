@@ -2,9 +2,15 @@ name: Build and Test notification sender
 
 on:
   pull_request:
+    branches:
+      - master
+    paths:
+      - notify/**
   push:
     branches:
       - master
+    paths:
+      - notify/**
 
 jobs:
   build:

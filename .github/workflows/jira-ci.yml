@@ -2,9 +2,15 @@ name: Build and Test
 
 on:
   pull_request:
+    branches:
+      - master
+    paths:
+      - jira-pull-requests/**
   push:
     branches:
       - master
+    paths:
+      - jira-pull-requests/**
 
 jobs:
   build:
