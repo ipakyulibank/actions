@@ -6,22 +6,24 @@
 
 ### Тригер
 
-Данный Action должен запускаться по событию [release](https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#release).types, а именно по типу `published`.
+Данный Action должен запускаться по событию [release](https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#release) и [pull_request](https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request).
 
 ### Принцип работы (логика)
 
-1. Проверяет eventType
+1. Проверить eventType
     - Если "release"
       - Проверяет тип события
-      - Проверяет, было ли действие выпущено
-      - Проверяет, является ли действие уже «prerelease»
+      - Проверяет, было ли выполнено действие
+      - Проверяет, является ли действие уже "prerelease"
       - Проверяет, указана ли filter_string в ENV
-      - Сравнивает необходимые теги через «git diff»
+      - Узнайте последние выпуски с github API
+      - Вытяните репо с тегами
+      - Сравнивает обязательные теги с "git diff --names-only"
     - Если "pull_request" или "push"
       - Проверяет, указана ли filter_string в ENV
-      - Убедитесь, что для полезной нагрузки заданы свойства base и head
-      - Имя необходимых файлов загружается через github.paginate()
-2. Результат сравнения требуемых тегов возвращается в виде '1' или '0'
+      - Убедитесь, что свойства base и head установлены для полезной нагрузки.
+      - Имя файлов diff загружается с помощью github rest API, сравнивающего базовые и головные ссылки.
+2. Если в списке файлов есть хотя бы один файл, удовлетворяющий условию в фильтре, он вернет в переменную результат = ‘1’, иначе ‘0’
 
 
 ## Входные параметры (input)
