@@ -10765,7 +10765,7 @@ axios.default = axios;
 
 ;// CONCATENATED MODULE: ./src/reference/errors.ts
 const ErrorTypes = {
-    message_length_too_long: "Message length is too long"
+    message_length_too_long: "Message length too long"
 };
 
 ;// CONCATENATED MODULE: ./src/configs/index.ts
