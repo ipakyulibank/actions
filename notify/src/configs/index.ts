@@ -1,0 +1,1 @@
+export const TG_MESSAGE_MAX_LENGTH = 3990

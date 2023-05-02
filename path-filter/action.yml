@@ -1,0 +1,16 @@
+name: 'Path filter'
+author: Saydakram Aminjonov
+description: 'Filtering paths when a release occurs'
+inputs:
+  github_token:
+    description: 'Github PAT'
+    default: ${{ github.token }}
+  filter_string:
+    description: 'An expression that compares the location of a file'
+    required: true
+outputs:
+  result:
+    description: Path Filter returns '0' or '1'
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
