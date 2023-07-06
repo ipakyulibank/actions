@@ -36,12 +36,16 @@ export async function localComparison (): Promise<boolean> {
 
   const current_release_tag = context.payload.release.tag_name;
 
+  core.debug(`Current TAG is: ${current_release_tag}`);
+
   const releases_opts = octokit.rest.repos.listReleases.endpoint.merge({
     owner,
     repo,
   });
   
   const releases: any = await octokit.paginate(releases_opts);
+
+  core.debug(`Releases request with octokit is initiated`);
 
   let found_current = false;
   let found_prev = false;
@@ -51,18 +55,22 @@ export async function localComparison (): Promise<boolean> {
     }
     if(release.tag_name === current_release_tag) {
       found_current = true;
+      core.debug(`Current release found`);
     } else if(found_current) {
       found_prev = release.tag_name;
       break;
     }
   }
+  core.debug(`Previous release tag found: ${found_prev}`);
   if(found_prev === false) {
     throw new Error('Could not find previous release');
   }
 
   await exec(`git fetch --tags`)
+  core.debug(`Tags fetched`);
 
   await exec(`git status`)
+  core.debug(`Git status`);
 
   const git_diff_result: string[] = [];
 
@@ -76,6 +84,10 @@ export async function localComparison (): Promise<boolean> {
   core.info(`Searching in diff between ${found_prev} ${current_release_tag} using filter: ${filter}`);
 
   await spawn('git',['diff', '--name-only', `tags/${found_prev}`, `tags/${current_release_tag}`], options)
+  core.debug(
+    `Git diff result is: \n`
+    + git_diff_result.join('\n')
+  );
 
   core.debug(`Files of compared commits: ${ JSON.stringify( git_diff_result ) }`);
 
