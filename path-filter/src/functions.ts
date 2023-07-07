@@ -144,9 +144,9 @@ export async function githubComparison (): Promise<boolean> {
     owner,
     repo
   })
-  core.debug("-NOT Found error step - 6");
+  core.debug("-NOT Found error step - 6, Keys: "+JSON.stringify({base,head,owner,repo}));
   const diffs: any = await octokit.paginate(compare_opts);
-  core.debug("-NOT Found error step - 7, Keys: "+JSON.stringify({base,head,owner,repo}));
+  core.debug("-NOT Found error step - 7");
   const files = new Set();
   for await (const diff of diffs) {
     for (const file of diff.files) {
