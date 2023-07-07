@@ -11789,10 +11789,8 @@ const GithubEventTypes = {
 
 
 async function localComparison() {
-    core.debug("validate inputs");
     const github_token = core.getInput("github_token", { required: true });
     const filter = core.getInput("filter_string", { required: true });
-    core.debug(`validation completed, github_token=${github_token}, filter=${filter}`);
     const octokit = github.getOctokit(github_token);
     const context = github.context;
     const owner = context.repo.owner;
@@ -11857,10 +11855,10 @@ async function localComparison() {
     return result;
 }
 async function githubComparison() {
-    core.debug("validate inputs");
+    core.debug("-NOT Found error step - 1");
     const github_token = core.getInput("github_token", { required: true });
     const filter = core.getInput("filter_string", { required: true });
-    core.debug(`validation completed, github_token=${github_token}, filter=${filter}`);
+    core.debug("-NOT Found error step - 2");
     const octokit = github.getOctokit(github_token);
     const context = github.context;
     const owner = context.repo.owner;
@@ -11883,29 +11881,36 @@ async function githubComparison() {
     core.info(`Base commit: ${base}`);
     core.info(`Head commit: ${head}`);
     /** Validation */
+    core.debug("-NOT Found error step - 3");
     if (!filter) {
         core.setFailed('ENV var FILTER is mandatory');
     }
+    core.debug("-NOT Found error step - 4");
     // Ensure that the base and head properties are set on the payload.
     if (!base || !head) {
         core.setFailed(`The base and head commits are missing from the payload for this ${context.eventName} event. ` +
             "Please submit an issue.");
     }
+    core.debug("-NOT Found error step - 5");
     const compare_opts = octokit.rest.repos.compareCommits.endpoint.merge({
         base,
         head,
         owner,
         repo
     });
+    core.debug("-NOT Found error step - 6");
     const diffs = await octokit.paginate(compare_opts);
+    core.debug("-NOT Found error step - 7");
     const files = new Set();
     for await (const diff of diffs) {
         for (const file of diff.files) {
             files.add(file.filename);
         }
     }
+    core.debug("-NOT Found error step - 8, FILES: " + JSON.stringify(files));
     core.debug(`Files of compared commits: ${Array.from(files)}`);
     const result = Array.from(files).some((v) => minimatch(v, filter, { matchBase: true }));
+    core.debug("-NOT Found error step - 9");
     core.debug(`at least 1 file matching 'filter_string' is ${result}`);
     return result;
 }
