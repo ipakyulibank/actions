@@ -91,8 +91,12 @@ export async function localComparison (): Promise<boolean> {
 }
 
 export async function githubComparison (): Promise<boolean> {
+  core.info("validate inputs");
+
   const github_token = core.getInput("github_token", { required: true });
   const filter = core.getInput("filter_string", { required: true });
+
+  core.info(`validation completed, github_token=${github_token}, filter=${filter}`,);
 
   const octokit = github.getOctokit(github_token);
   const context = github.context;
