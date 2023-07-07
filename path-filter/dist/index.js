@@ -11789,10 +11789,10 @@ const GithubEventTypes = {
 
 
 async function localComparison() {
-    core.info("validate inputs");
+    core.debug("validate inputs");
     const github_token = core.getInput("github_token", { required: true });
     const filter = core.getInput("filter_string", { required: true });
-    core.info(`validation completed, github_token=${github_token}, filter=${filter}`);
+    core.debug(`validation completed, github_token=${github_token}, filter=${filter}`);
     const octokit = github.getOctokit(github_token);
     const context = github.context;
     const owner = context.repo.owner;
@@ -11857,10 +11857,10 @@ async function localComparison() {
     return result;
 }
 async function githubComparison() {
-    core.info("validate inputs");
+    core.debug("validate inputs");
     const github_token = core.getInput("github_token", { required: true });
     const filter = core.getInput("filter_string", { required: true });
-    core.info(`validation completed, github_token=${github_token}, filter=${filter}`);
+    core.debug(`validation completed, github_token=${github_token}, filter=${filter}`);
     const octokit = github.getOctokit(github_token);
     const context = github.context;
     const owner = context.repo.owner;
