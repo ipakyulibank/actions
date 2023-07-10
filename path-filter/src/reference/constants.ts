@@ -3,3 +3,7 @@ export const GithubEventTypes = {
   pull_request: "pull_request",
   push: "push"
 }
+
+export const GithubStatuses = {
+  404: "not_found"
+}

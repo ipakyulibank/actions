@@ -11781,6 +11781,9 @@ const GithubEventTypes = {
     pull_request: "pull_request",
     push: "push"
 };
+const GithubStatuses = {
+    404: "not_found"
+};
 
 ;// CONCATENATED MODULE: ./src/functions.ts
 
@@ -11795,6 +11798,7 @@ async function localComparison() {
     const context = github.context;
     const owner = context.repo.owner;
     const repo = context.repo.repo;
+    core.debug(`Variables used: ${{ owner, repo, context }}`);
     /** Validation */
     /**
      * 1. Is release?
@@ -11820,7 +11824,21 @@ async function localComparison() {
         owner,
         repo,
     });
-    const releases = await octokit.paginate(releases_opts);
+    let releases;
+    try {
+        releases = await octokit.paginate(releases_opts);
+    }
+    catch (error) {
+        core.error(JSON.stringify({ message: "Gihub error", error }));
+        if (error?.status === GithubStatuses[404]) {
+            core.setFailed("No releases found on this Github_token. " +
+                "Please submit an issue.");
+        }
+        else {
+            core.setFailed("Error to find releases, " + error.toString() + ". " +
+                "Please submit an issue.");
+        }
+    }
     let found_current = false;
     let found_prev = false;
     for await (const release of releases) {
@@ -11855,14 +11873,13 @@ async function localComparison() {
     return result;
 }
 async function githubComparison() {
-    core.debug("-NOT Found error step - 1");
     const github_token = core.getInput("github_token", { required: true });
     const filter = core.getInput("filter_string", { required: true });
-    core.debug("-NOT Found error step - 2");
     const octokit = github.getOctokit(github_token);
     const context = github.context;
     const owner = context.repo.owner;
     const repo = context.repo.repo;
+    core.debug(`Variables used: ${{ owner, repo, filter_string: filter, context }}`);
     let base, head;
     switch (context.eventName) {
         case GithubEventTypes.pull_request:
@@ -11881,44 +11898,43 @@ async function githubComparison() {
     core.info(`Base commit: ${base}`);
     core.info(`Head commit: ${head}`);
     /** Validation */
-    core.debug("-NOT Found error step - 3");
     if (!filter) {
         core.setFailed('ENV var FILTER is mandatory');
     }
-    core.debug("-NOT Found error step - 4");
     // Ensure that the base and head properties are set on the payload.
     if (!base || !head) {
         core.setFailed(`The base and head commits are missing from the payload for this ${context.eventName} event. ` +
             "Please submit an issue.");
     }
-    core.debug("-NOT Found error step - 5");
     const compare_opts = octokit.rest.repos.compareCommits.endpoint.merge({
         base,
         head,
         owner,
         repo
     });
-    core.debug("-NOT Found error step - 6, Keys: " + JSON.stringify({ base, head, owner, repo, compare_opts }));
     let diffs;
     try {
         diffs = await octokit.paginate(compare_opts);
-        core.debug("-NOT Found error step - 6.2, Success");
     }
     catch (error) {
-        core.debug("-NOT Found error step - 6.2, Error => " + error.toString());
-        core.debug("-NOT Found error step - 6.2.1, Error_obj => " + JSON.stringify(error));
+        core.error(JSON.stringify({ message: "Gihub error", error }));
+        if (error?.status === GithubStatuses[404]) {
+            core.setFailed("No commits found on this Github_token. " +
+                "Please submit an issue.");
+        }
+        else {
+            core.setFailed("Error to comparing commits, " + error.toString() + ". " +
+                "Please submit an issue.");
+        }
     }
-    core.debug("-NOT Found error step - 7");
     const files = new Set();
     for await (const diff of diffs) {
         for (const file of diff.files) {
             files.add(file.filename);
         }
     }
-    core.debug("-NOT Found error step - 8, FILES: " + JSON.stringify(files));
     core.debug(`Files of compared commits: ${Array.from(files)}`);
     const result = Array.from(files).some((v) => minimatch(v, filter, { matchBase: true }));
-    core.debug("-NOT Found error step - 9");
     core.debug(`at least 1 file matching 'filter_string' is ${result}`);
     return result;
 }
