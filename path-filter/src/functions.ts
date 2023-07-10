@@ -14,7 +14,7 @@ export async function localComparison (): Promise<boolean> {
   const owner = context.repo.owner;
   const repo = context.repo.repo;
 
-  core.debug(`Variables used: ${ {owner,repo,context} }`);
+  core.debug(`Variables used: ${ JSON.stringify({owner,repo,context}) }`);
   /** Validation */
   /**
    * 1. Is release?
@@ -45,7 +45,7 @@ export async function localComparison (): Promise<boolean> {
     releases = await octokit.paginate(releases_opts);
   } catch (error: any) {
     core.debug(JSON.stringify({ message: "Gihub error", error }));
-    if ( error?.status === GithubStatuses[404] ) {
+    if ( error?.status === GithubStatuses.not_found ) {
       core.setFailed(
         "No releases found on this Github_token. " +
           "Please submit an issue."
@@ -113,7 +113,7 @@ export async function githubComparison (): Promise<boolean> {
   const owner = context.repo.owner;
   const repo = context.repo.repo;
   
-  core.debug(`Variables used: ${ {owner,repo,filter_string: filter, context} }`);
+  core.debug(`Variables used: ${ JSON.stringify({owner,repo,filter_string: filter, context}) }`);
   let base, head;
     
   switch (context.eventName) {
@@ -160,7 +160,7 @@ export async function githubComparison (): Promise<boolean> {
     diffs = await octokit.paginate(compare_opts);
   } catch (error: any) {
     core.debug(JSON.stringify({ message: "Gihub error", error }));
-    if ( error?.status === GithubStatuses[404] ) {
+    if ( error?.status === GithubStatuses.not_found ) {
       core.setFailed(
         "No commits found on this Github_token. " +
           "Please submit an issue."

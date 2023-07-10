@@ -11782,7 +11782,7 @@ const GithubEventTypes = {
     push: "push"
 };
 const GithubStatuses = {
-    404: "not_found"
+    "not_found": 404
 };
 
 ;// CONCATENATED MODULE: ./src/functions.ts
@@ -11798,7 +11798,7 @@ async function localComparison() {
     const context = github.context;
     const owner = context.repo.owner;
     const repo = context.repo.repo;
-    core.debug(`Variables used: ${{ owner, repo, context }}`);
+    core.debug(`Variables used: ${JSON.stringify({ owner, repo, context })}`);
     /** Validation */
     /**
      * 1. Is release?
@@ -11830,7 +11830,7 @@ async function localComparison() {
     }
     catch (error) {
         core.debug(JSON.stringify({ message: "Gihub error", error }));
-        if (error?.status === GithubStatuses[404]) {
+        if (error?.status === GithubStatuses.not_found) {
             core.setFailed("No releases found on this Github_token. " +
                 "Please submit an issue.");
         }
@@ -11880,7 +11880,7 @@ async function githubComparison() {
     const context = github.context;
     const owner = context.repo.owner;
     const repo = context.repo.repo;
-    core.debug(`Variables used: ${{ owner, repo, filter_string: filter, context }}`);
+    core.debug(`Variables used: ${JSON.stringify({ owner, repo, filter_string: filter, context })}`);
     let base, head;
     switch (context.eventName) {
         case GithubEventTypes.pull_request:
@@ -11919,7 +11919,7 @@ async function githubComparison() {
     }
     catch (error) {
         core.debug(JSON.stringify({ message: "Gihub error", error }));
-        if (error?.status === GithubStatuses[404]) {
+        if (error?.status === GithubStatuses.not_found) {
             core.setFailed("No commits found on this Github_token. " +
                 "Please submit an issue.");
         }

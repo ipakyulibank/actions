@@ -5,5 +5,5 @@ export const GithubEventTypes = {
 }
 
 export const GithubStatuses = {
-  404: "not_found"
+  "not_found": 404
 }
