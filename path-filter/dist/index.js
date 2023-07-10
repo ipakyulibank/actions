@@ -11829,7 +11829,7 @@ async function localComparison() {
         releases = await octokit.paginate(releases_opts);
     }
     catch (error) {
-        core.error(JSON.stringify({ message: "Gihub error", error }));
+        core.debug(JSON.stringify({ message: "Gihub error", error }));
         if (error?.status === GithubStatuses[404]) {
             core.setFailed("No releases found on this Github_token. " +
                 "Please submit an issue.");
@@ -11838,6 +11838,7 @@ async function localComparison() {
             core.setFailed("Error to find releases, " + error.toString() + ". " +
                 "Please submit an issue.");
         }
+        return false;
     }
     let found_current = false;
     let found_prev = false;
@@ -11917,7 +11918,7 @@ async function githubComparison() {
         diffs = await octokit.paginate(compare_opts);
     }
     catch (error) {
-        core.error(JSON.stringify({ message: "Gihub error", error }));
+        core.debug(JSON.stringify({ message: "Gihub error", error }));
         if (error?.status === GithubStatuses[404]) {
             core.setFailed("No commits found on this Github_token. " +
                 "Please submit an issue.");
@@ -11926,6 +11927,7 @@ async function githubComparison() {
             core.setFailed("Error to comparing commits, " + error.toString() + ". " +
                 "Please submit an issue.");
         }
+        return false;
     }
     const files = new Set();
     for await (const diff of diffs) {

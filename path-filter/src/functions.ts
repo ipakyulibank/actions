@@ -44,7 +44,7 @@ export async function localComparison (): Promise<boolean> {
   try {
     releases = await octokit.paginate(releases_opts);
   } catch (error: any) {
-    core.error(JSON.stringify({ message: "Gihub error", error }));
+    core.debug(JSON.stringify({ message: "Gihub error", error }));
     if ( error?.status === GithubStatuses[404] ) {
       core.setFailed(
         "No releases found on this Github_token. " +
@@ -56,6 +56,8 @@ export async function localComparison (): Promise<boolean> {
           "Please submit an issue."
       )
     }
+
+    return false;
   }
 
   let found_current = false;
@@ -157,7 +159,7 @@ export async function githubComparison (): Promise<boolean> {
   try {
     diffs = await octokit.paginate(compare_opts);
   } catch (error: any) {
-    core.error(JSON.stringify({ message: "Gihub error", error }));
+    core.debug(JSON.stringify({ message: "Gihub error", error }));
     if ( error?.status === GithubStatuses[404] ) {
       core.setFailed(
         "No commits found on this Github_token. " +
@@ -169,6 +171,8 @@ export async function githubComparison (): Promise<boolean> {
           "Please submit an issue."
       )
     }
+
+    return false;
   }
 
   const files = new Set();
