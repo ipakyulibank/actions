@@ -11841,14 +11841,11 @@ async function localComparison() {
     await (0,external_child_process_namespaceObject.exec)(`git fetch --tags`);
     await (0,external_child_process_namespaceObject.exec)(`git status`);
     const git_diff_result = [];
-    let options = {};
-    options = {
-        signal: (data) => {
-            git_diff_result.push(data.trim());
-        }
-    };
     core.info(`Searching in diff between ${found_prev} ${current_release_tag} using filter: ${filter}`);
-    await (0,external_child_process_namespaceObject.spawn)('git', ['diff', '--name-only', `tags/${found_prev}`, `tags/${current_release_tag}`], options);
+    let n = (0,external_child_process_namespaceObject.spawn)('git', ['diff', '--name-only', `tags/${found_prev}`, `tags/${current_release_tag}`]);
+    n.on("message", (data) => {
+        git_diff_result.push(data.trim());
+    });
     core.debug(`Files of compared commits: ${JSON.stringify(git_diff_result)}`);
     const result = git_diff_result.some((v) => minimatch(v, filter, { matchBase: true }));
     core.debug(`git difference of multiple tags is ${result}`);
