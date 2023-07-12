@@ -71,14 +71,14 @@ export async function localComparison (): Promise<boolean> {
     const result: string[] = [];
     const n = spawn('git',['diff', '--name-only', `tags/${found_prev}`, `tags/${current_release_tag}`])
   
-    n.stdout.on("data",(data: string) => {
+    n.stdout.on("data",(data: Buffer) => {
       result.push(data.toString().trim());
     })
-    n.on('close', (code) => {
+    n.on('close', (code: number) => {
       if(code === 0) {
         resolve(result);
       } else {
-        reject(`git diff exited with code: ${code}`);
+        reject(`git diff exited with code: ${code}\nOutput: ${result.join('\n')}`);
       }
     })
     n.on('error', (err) => {

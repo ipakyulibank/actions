@@ -11852,7 +11852,7 @@ async function localComparison() {
                 resolve(result);
             }
             else {
-                reject(`git diff exited with code: ${code}`);
+                reject(`git diff exited with code: ${code}\nOutput: ${result.join('\n')}`);
             }
         });
         n.on('error', (err) => {
