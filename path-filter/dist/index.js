@@ -11840,11 +11840,24 @@ async function localComparison() {
     }
     await (0,external_child_process_namespaceObject.exec)(`git fetch --tags`);
     await (0,external_child_process_namespaceObject.exec)(`git status`);
-    const git_diff_result = [];
     core.info(`Searching in diff between ${found_prev} ${current_release_tag} using filter: ${filter}`);
-    const n = (0,external_child_process_namespaceObject.spawn)('git', ['diff', '--name-only', `tags/${found_prev}`, `tags/${current_release_tag}`]);
-    n.stdout.on("data", (data) => {
-        git_diff_result.push(data.toString().trim());
+    const git_diff_result = await new Promise((resolve, reject) => {
+        const result = [];
+        const n = (0,external_child_process_namespaceObject.spawn)('git', ['diff', '--name-only', `tags/${found_prev}`, `tags/${current_release_tag}`]);
+        n.stdout.on("data", (data) => {
+            result.push(data.toString().trim());
+        });
+        n.on('close', (code) => {
+            if (code === 0) {
+                resolve(result);
+            }
+            else {
+                reject(`git diff exited with code: ${code}`);
+            }
+        });
+        n.on('error', (err) => {
+            reject(err);
+        });
     });
     core.debug(`Files of compared commits: ${JSON.stringify(git_diff_result)}`);
     const result = git_diff_result.some((v) => minimatch(v, filter, { matchBase: true }));
