@@ -1,9 +1,8 @@
 import { GithubEventTypes } from '../reference/constants';
-import { mockActionCore, mockActionGithub, mockChildProcess } from '../../testHelpers';
+import { mockActionCore, mockActionGithub } from '../../testHelpers';
 
 const { action_core_spy, filter_str_update } = mockActionCore();
 const { event_name_update, pr_variables_update } = mockActionGithub();
-mockChildProcess()
 
 import FN from '../../src/main';
 
@@ -33,7 +32,7 @@ describe("main function tests", function () {
       })
     })
 
-    describe("mock git_diff_result with matrix and check result of script", function() {
+    describe("mock git_diff_result without matrix and check result of script", function() {
       let result: any;
       
       beforeAll( async function () {
@@ -52,7 +51,7 @@ describe("main function tests", function () {
       })
 
       it('checking that the result is returning correctly', async function(){
-        expect ( result ).toBe( '1' )
+        expect ( result ).toBe( '0' )
       })
     })
 
