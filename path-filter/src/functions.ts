@@ -68,10 +68,10 @@ export async function localComparison (): Promise<boolean> {
 
   core.info(`Searching in diff between ${found_prev} ${current_release_tag} using filter: ${filter}`);
 
-  let n = spawn('git',['diff', '--name-only', `tags/${found_prev}`, `tags/${current_release_tag}`])
+  const n = spawn('git',['diff', '--name-only', `tags/${found_prev}`, `tags/${current_release_tag}`])
   
-  n.on("message",(data: string) => {
-    git_diff_result.push(data.trim());
+  n.stdout.on("data",(data: string) => {
+    git_diff_result.push(data.toString().trim());
   })
 
   core.debug(`Files of compared commits: ${ JSON.stringify( git_diff_result ) }`);
