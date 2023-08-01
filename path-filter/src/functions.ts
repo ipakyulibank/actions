@@ -2,7 +2,7 @@ import * as core from "@actions/core";
 import * as github from "@actions/github";
 import { exec, spawn } from "child_process";
 import { minimatch } from "minimatch";
-import { GithubEventTypes } from "./reference/constants";
+import { GithubEventTypes, GithubStatuses } from "./reference/constants";
 
 export async function localComparison (): Promise<boolean> {
   const github_token = core.getInput("github_token", { required: true });
@@ -13,8 +13,8 @@ export async function localComparison (): Promise<boolean> {
 
   const owner = context.repo.owner;
   const repo = context.repo.repo;
-    
-  
+
+  core.debug(`Variables used: ${ JSON.stringify({owner,repo,context}) }`);
   /** Validation */
   /**
    * 1. Is release?
@@ -40,8 +40,25 @@ export async function localComparison (): Promise<boolean> {
     owner,
     repo,
   });
-  
-  const releases: any = await octokit.paginate(releases_opts);
+  let releases: any;
+  try {
+    releases = await octokit.paginate(releases_opts);
+  } catch (error: any) {
+    core.debug(JSON.stringify({ message: "Gihub error", error }));
+    if ( error?.status === GithubStatuses.not_found ) {
+      core.setFailed(
+        "No releases found on this Github_token. " +
+          "Please submit an issue."
+      )
+    } else {
+      core.setFailed(
+        "Error to find releases, " + error.toString() + ". " +
+          "Please submit an issue."
+      )
+    }
+
+    return false;
+  }
 
   let found_current = false;
   let found_prev = false;
@@ -106,6 +123,7 @@ export async function githubComparison (): Promise<boolean> {
   const owner = context.repo.owner;
   const repo = context.repo.repo;
   
+  core.debug(`Variables used: ${ JSON.stringify({owner,repo,filter_string: filter, context}) }`);
   let base, head;
     
   switch (context.eventName) {
@@ -133,7 +151,7 @@ export async function githubComparison (): Promise<boolean> {
   if (!filter) {
     core.setFailed('ENV var FILTER is mandatory');
   }
-      // Ensure that the base and head properties are set on the payload.
+  // Ensure that the base and head properties are set on the payload.
   if (!base || !head) {
     core.setFailed(
       `The base and head commits are missing from the payload for this ${context.eventName} event. ` +
@@ -147,7 +165,23 @@ export async function githubComparison (): Promise<boolean> {
     owner,
     repo
   })
-  const diffs: any = await octokit.paginate(compare_opts);
+  let diffs: any;
+  try {
+    diffs = await octokit.paginate(compare_opts);
+  } catch (error: any) {
+    core.debug(JSON.stringify({ message: "Gihub error", error }));
+    if ( error?.status === GithubStatuses.not_found ) {
+      core.setFailed("Auth Token does not have permissions for this")
+    } else {
+      core.setFailed(
+        "Error to comparing commits, " + error.toString() + ". " +
+          "Please submit an issue."
+      )
+    }
+
+    return false;
+  }
+
   const files = new Set();
   for await (const diff of diffs) {
     for (const file of diff.files) {

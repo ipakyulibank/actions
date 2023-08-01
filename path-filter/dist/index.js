@@ -11781,6 +11781,9 @@ const GithubEventTypes = {
     pull_request: "pull_request",
     push: "push"
 };
+const GithubStatuses = {
+    "not_found": 404
+};
 
 ;// CONCATENATED MODULE: ./src/functions.ts
 
@@ -11795,6 +11798,7 @@ async function localComparison() {
     const context = github.context;
     const owner = context.repo.owner;
     const repo = context.repo.repo;
+    core.debug(`Variables used: ${JSON.stringify({ owner, repo, context })}`);
     /** Validation */
     /**
      * 1. Is release?
@@ -11820,7 +11824,22 @@ async function localComparison() {
         owner,
         repo,
     });
-    const releases = await octokit.paginate(releases_opts);
+    let releases;
+    try {
+        releases = await octokit.paginate(releases_opts);
+    }
+    catch (error) {
+        core.debug(JSON.stringify({ message: "Gihub error", error }));
+        if (error?.status === GithubStatuses.not_found) {
+            core.setFailed("No releases found on this Github_token. " +
+                "Please submit an issue.");
+        }
+        else {
+            core.setFailed("Error to find releases, " + error.toString() + ". " +
+                "Please submit an issue.");
+        }
+        return false;
+    }
     let found_current = false;
     let found_prev = false;
     for await (const release of releases) {
@@ -11871,6 +11890,7 @@ async function githubComparison() {
     const context = github.context;
     const owner = context.repo.owner;
     const repo = context.repo.repo;
+    core.debug(`Variables used: ${JSON.stringify({ owner, repo, filter_string: filter, context })}`);
     let base, head;
     switch (context.eventName) {
         case GithubEventTypes.pull_request:
@@ -11903,7 +11923,21 @@ async function githubComparison() {
         owner,
         repo
     });
-    const diffs = await octokit.paginate(compare_opts);
+    let diffs;
+    try {
+        diffs = await octokit.paginate(compare_opts);
+    }
+    catch (error) {
+        core.debug(JSON.stringify({ message: "Gihub error", error }));
+        if (error?.status === GithubStatuses.not_found) {
+            core.setFailed("Auth Token does not have permissions for this");
+        }
+        else {
+            core.setFailed("Error to comparing commits, " + error.toString() + ". " +
+                "Please submit an issue.");
+        }
+        return false;
+    }
     const files = new Set();
     for await (const diff of diffs) {
         for (const file of diff.files) {
