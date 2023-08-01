@@ -163,7 +163,7 @@ export async function githubComparison (): Promise<boolean> {
     if ( error?.status === GithubStatuses.not_found ) {
       core.setFailed(
         "No commits found on this Github_token. " +
-          "Please submit an issue."
+          "Please submit an issue OR Auth Token does not have permissions for this repo."
       )
     } else {
       core.setFailed(
