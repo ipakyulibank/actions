@@ -161,10 +161,7 @@ export async function githubComparison (): Promise<boolean> {
   } catch (error: any) {
     core.debug(JSON.stringify({ message: "Gihub error", error }));
     if ( error?.status === GithubStatuses.not_found ) {
-      core.setFailed(
-        "No commits found on this Github_token. " +
-          "Please submit an issue OR Auth Token does not have permissions for this repo."
-      )
+      core.setFailed("Auth Token does not have permissions for this")
     } else {
       core.setFailed(
         "Error to comparing commits, " + error.toString() + ". " +
