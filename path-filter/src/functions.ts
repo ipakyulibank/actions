@@ -63,6 +63,7 @@ export async function localComparison (): Promise<boolean> {
   let found_current = false;
   let found_prev = false;
   for await (const release of releases) {
+    core.debug(JSON.stringify(release));
     if(release.draft || release.prerelease) {
       continue;
     }
