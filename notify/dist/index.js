@@ -10815,7 +10815,11 @@ const stringify = (data) => JSON.stringify(data);
         core.setOutput('result', '1');
     }
     catch (error) {
-        core.setFailed(error?.message);
+        core.setFailed({
+            name: "axios_response_error",
+            cause: error?.response?.data,
+            message: error?.message
+        });
     }
 }
 
