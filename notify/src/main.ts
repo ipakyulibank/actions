@@ -40,6 +40,10 @@ export default async function (): Promise<void> {
     core.setOutput('result', '1');
 
   } catch (error: any) {
-    core.setFailed(error?.message);
+    core.setFailed({
+      name: "axios_response_error",
+      cause: error?.response?.data,
+      message: error?.message
+    });
   }
 }
