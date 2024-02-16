@@ -40,10 +40,13 @@ export default async function (): Promise<void> {
     core.setOutput('result', '1');
 
   } catch (error: any) {
-    core.setFailed({
-      name: "axios_response_error",
-      cause: error?.response?.data,
-      message: error?.message
-    });
+    core.debug(
+      stringify({
+        message: "axios_response_error",
+        response_body: error?.response?.data,
+        short_error: error?.message
+      })
+    )
+    core.setFailed(error?.message);
   }
 }

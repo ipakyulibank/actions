@@ -36,7 +36,7 @@ describe("main function tests", function () {
       const calls = github_core_spy.setFailed.mock.calls;
       
       expect( calls.length ).toBe(1)
-      expect( calls[0][0].message ).toEqual( setFailedMsg )
+      expect( calls[0][0] ).toEqual( setFailedMsg )
     })
   
   })
@@ -69,7 +69,7 @@ describe("main function tests", function () {
       const calls = github_core_spy.setFailed.mock.calls;
       
       expect( calls.length ).toBe(1)
-      expect( calls[0][0].message ).toEqual( ErrorTypes.message_length_too_long )
+      expect( calls[0][0] ).toEqual( ErrorTypes.message_length_too_long )
     })
   
   })
