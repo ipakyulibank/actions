@@ -40,6 +40,14 @@ export default async function (): Promise<void> {
     core.setOutput('result', '1');
 
   } catch (error: any) {
+    core.debug(
+      stringify({
+        message: "send_notification_failed",
+        error,
+        short_error: error.toString(),
+        description: error?.message
+      })
+    )
     core.setFailed(error?.message);
   }
 }
