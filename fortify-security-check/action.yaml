@@ -1,0 +1,223 @@
+name: "Fortify Security Check"
+description: "Scan source code in repository with self-hosted Fortify SAST"
+inputs:
+  fortify-ssc-url:
+    description: "Fortify SSC URL"
+    required: true
+  ssc-token:
+    description: "Fortify SSC token"
+    required: true
+  ssc-sast-token:
+    description: "Fortify SSC SAST shared token"
+    required: true
+  application:
+    description: "Application name in Fortify SSC"
+    required: true
+  application-version:
+    description: "Application version in Fortify SSC"
+    required: true
+  sast-version:
+    description: "Fortify SSC SAST module version"
+    required: false
+    default: "23.2"
+  github-token:
+    description: "GitHub token"
+    required: false
+  exit-with-error-on-severity:
+    description: "Fail the GitHub Workflow if issues with the specified and above severity are detected during the scan"
+    required: false
+    default: "Medium"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Login to Foritfy SSC
+      shell: bash
+      run: |
+        fcli ssc session login \
+          --url ${{ inputs.fortify-ssc-url }} \
+          --ci-token ${{ inputs.ssc-token }}
+
+        fcli sc-sast session login \
+          --ssc-url ${{ inputs.fortify-ssc-url }} \
+          -t ${{ inputs.ssc-token }} \
+          -c ${{ inputs.ssc-sast-token }}
+
+    - name: Create package with source code
+      shell: bash
+      run: |
+        scancentral package -o package.zip
+
+    - name: Start scan session
+      shell: bash
+      run: |
+        fcli sc-sast scan start \
+          --publish-to ${{ inputs.application }}:${{ inputs.application-version }} \
+          -p package.zip \
+          -v ${{ inputs.sast-version }} \
+          --store sc_sast_scan
+
+    - name: Waiting for the scan to complete
+      shell: bash
+      run: |
+        fcli sc-sast scan wait-for ::sc_sast_scan::
+
+    - name: Downloading the scan report
+      shell: bash
+      run: |
+        fcli ssc action run github-sast-report \
+          --appversion ${{ inputs.application }}:${{ inputs.application-version }}
+
+    - name: Create pull request comment
+      if: ${{ github.event_name == 'pull_request' }}
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const { execSync } = require('child_process');
+
+          function issueDescription(issue) {
+              const file = issue.fullFileName.replace(`Src/${{ inputs.application }}/`, '');
+              const line = issue.lineNumber == null ? '' : ':' + issue.lineNumber
+
+              return `* ${issue.scanStatus} (${issue.engineCategory}) - ${issue.issueName}:
+              [${file}${line}](https://github.com/${owner}/${repo}/blob/${sha}/${file}#L${issue.lineNumber == null ? '' : issue.lineNumber})`
+          }
+
+          const issue_number = context.issue.number;
+          const owner = context.repo.owner;
+          const repo = context.repo.repo;
+          const sha = context.sha
+
+          const output = execSync('fcli ssc issue list --av ${{ inputs.application }}:${{ inputs.application-version }} --include visible,removed -o json');
+          const parsedOutput = JSON.parse(output);
+
+          const newIssues = parsedOutput.filter(issue => issue.scanStatus === 'NEW' || issue.scanStatus === 'REINTRODUCED');
+          const removedIssues = parsedOutput.filter(issue => issue.scanStatus === 'REMOVED');
+
+          const newIssuesText = newIssues.length > 0
+            ? newIssues.map(issueDescription)
+            : '* No new or re-introduced issues were detected';
+
+          const removedIssuesText = removedIssues.length > 0
+            ? removedIssues.map(issueDescription)
+            : '* No removed issues were detected';
+
+          const prefix = '## Fortify vulnerability summary';
+          const body = `${prefix}
+          Any issues listed below are based on comparing the latest scan results against the previous scan results for SSC application version **${{ inputs.application }}:${{ inputs.application-version }}**.
+
+          To avoid interference from scans for other PR's or branches, it is recommended to track each PR/branch in a separate SSC application version.
+
+          ### New Issues
+          ${newIssuesText}
+
+          ### Removed Issues
+          ${removedIssuesText}`;
+
+          const opts = github.rest.issues.listComments.endpoint.merge({
+              owner,
+              repo,
+              issue_number,
+            });
+
+          const comments = await github.paginate(opts);
+
+          for await (const comment of comments) {
+            if(
+              comment.user.login === "github-actions[bot]"
+              && comment.body.substring(0, prefix.length) == prefix
+            ) {
+              await github.rest.issues.deleteComment({
+                owner,
+                repo,
+                comment_id: comment.id,
+              });
+            }
+          }
+
+          await github.rest.issues.createComment({
+            issue_number,
+            owner,
+            repo,
+            body
+          })
+
+    - name: Generate vulnerability report
+      shell: bash
+      run: |
+        report_file=$(mktemp)
+
+        fcli ssc issue list \
+          --av ${{ inputs.application }}:${{ inputs.application-version }} \
+          -o json > "$report_file"
+
+        issues_count=$(jq 'map(select(.friority != "Low")) | length' "$report_file")
+
+        if [ "$issues_count" -gt 0 ]; then
+          echo "Found $issues_count items"
+
+          echo "## Issues found" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Total number: **$issues_count**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Priority | Issue Name | File | Line Number |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|------------|------|-------------|" >> $GITHUB_STEP_SUMMARY
+          jq -r '
+            map(select(.friority != "Low")) |
+            sort_by(
+              [
+                (if .friority == "Critical" then 1
+                 elif .friority == "High" then 2
+                 elif .friority == "Medium" then 3
+                 else 4 end),
+                .impact
+              ]
+            ) |
+            .[] |
+            "| \(.friority) | \(.issueName) | \(.fullFileName | sub("^Src/${{ inputs.application }}/";"")) | \(.lineNumber) |"
+          ' "$report_file" >> $GITHUB_STEP_SUMMARY
+
+          severity_rank() {
+            case $1 in
+              Critical) echo 4 ;;
+              High) echo 3 ;;
+              Medium) echo 2 ;;
+              Low) echo 1 ;;
+              *) echo 0 ;;
+            esac
+          }
+          error_on_severity_rank=$(severity_rank "${{ inputs.exit-with-error-on-severity }}")
+
+          selected_priority_issues_count=$(jq --argjson rank "$error_on_severity_rank" '
+            map(select(
+              (.friority == "Critical" and 4 >= $rank) or
+              (.friority == "High" and 3 >= $rank) or
+              (.friority == "Medium" and 2 >= $rank) or
+              (.friority == "Low" and 1 >= $rank)
+            )) | length
+          ' "$report_file")
+          rm "$report_file"
+
+          if [ "$selected_priority_issues_count" -gt 0 ]; then
+            exit 1
+          fi
+        else
+          echo "No items with selected and above severity found."
+          rm "$report_file"
+        fi
+
+    - name: Logout from Fortify SSC
+      shell: bash
+      if: always()
+      run: |
+        fcli ssc session logout
+        fcli sc-sast session logout \
+          --no-revoke-token
+
+    - name: Upload scan report as workflow artifact
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: sarif-files
+        path: ./gh-fortify-sast.sarif
