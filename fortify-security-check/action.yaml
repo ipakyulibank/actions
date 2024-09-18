@@ -143,7 +143,6 @@ runs:
           echo "| Priority | Issue Name | File | Line Number |" >> $GITHUB_STEP_SUMMARY
           echo "|----------|------------|------|-------------|" >> $GITHUB_STEP_SUMMARY
           jq -r '
-            map(select(.friority != "Low")) |
             sort_by(
               [
                 (if .friority == "Critical" then 1
