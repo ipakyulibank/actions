@@ -115,27 +115,6 @@ runs:
           ### Removed Issues
           ${removedIssuesText}`;
 
-          const opts = github.rest.issues.listComments.endpoint.merge({
-              owner,
-              repo,
-              issue_number,
-            });
-
-          const comments = await github.paginate(opts);
-
-          for await (const comment of comments) {
-            if(
-              comment.user.login === "github-actions[bot]"
-              && comment.body.substring(0, prefix.length) == prefix
-            ) {
-              await github.rest.issues.deleteComment({
-                owner,
-                repo,
-                comment_id: comment.id,
-              });
-            }
-          }
-
           await github.rest.issues.createComment({
             issue_number,
             owner,
@@ -152,7 +131,7 @@ runs:
           --av ${{ inputs.application }}:${{ inputs.application-version }} \
           -o json > "$report_file"
 
-        issues_count=$(jq 'map(select(.friority != "Low")) | length' "$report_file")
+        issues_count=$(jq 'length' "$report_file")
 
         if [ "$issues_count" -gt 0 ]; then
           echo "Found $issues_count items"
@@ -170,7 +149,8 @@ runs:
                 (if .friority == "Critical" then 1
                  elif .friority == "High" then 2
                  elif .friority == "Medium" then 3
-                 else 4 end),
+                 elif .friority == "Low" then 4
+                 else 5 end),
                 .impact
               ]
             ) |
