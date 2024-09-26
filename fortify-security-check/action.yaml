@@ -90,7 +90,7 @@ runs:
           const sha = context.sha
 
           const output = execSync('fcli ssc issue list --av ${{ inputs.application }}:${{ inputs.application-version }} --include visible,removed -o json');
-          const parsedOutput = JSON.parse(output);
+          const parsedOutput = JSON.parse(output).filter(item => !item.suppressed);
 
           const newIssues = parsedOutput.filter(issue => issue.scanStatus === 'NEW' || issue.scanStatus === 'REINTRODUCED');
           const removedIssues = parsedOutput.filter(issue => issue.scanStatus === 'REMOVED');
@@ -129,7 +129,7 @@ runs:
 
         fcli ssc issue list \
           --av ${{ inputs.application }}:${{ inputs.application-version }} \
-          -o json > "$report_file"
+          -o json | jq '[.[] | select(.suppress != true)]' > "$report_file"
 
         issues_count=$(jq 'length' "$report_file")
 
