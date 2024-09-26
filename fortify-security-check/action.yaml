@@ -96,11 +96,11 @@ runs:
           const removedIssues = parsedOutput.filter(issue => issue.scanStatus === 'REMOVED');
 
           const newIssuesText = newIssues.length > 0
-            ? newIssues.map(issueDescription)
+            ? newIssues.map(issueDescription).join("\n")
             : '* No new or re-introduced issues were detected';
 
           const removedIssuesText = removedIssues.length > 0
-            ? removedIssues.map(issueDescription)
+            ? removedIssues.map(issueDescription).join("\n")
             : '* No removed issues were detected';
 
           const prefix = '## Fortify vulnerability summary';
