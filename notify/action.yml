@@ -14,6 +14,9 @@ inputs:
   PARSE_MODE:
     description: 'parse mode for message format'
     required: true
+  THREAD_ID:
+    description: 'thread id of superchat'
+    required: false
 outputs:
   result:
     description: Sent message result

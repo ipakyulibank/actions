@@ -6,6 +6,7 @@ export default async function (): Promise<void> {
   const chat_id = core.getInput("CHAT_ID", { required: true });
   const body = core.getInput("BODY", { required: true });
   const parse_mode = core.getInput("PARSE_MODE", { required: true });
+  const thread_id = core.getInput("THREAD_ID", { required: false });
   const url = 'https://api.telegram.org/bot';
 
   if ( core.isDebug() ) {
@@ -20,13 +21,20 @@ export default async function (): Promise<void> {
   }
 
   try {
+
+    const messageOptions: TelegramSendMessageOptions = {
+      chat_id,
+      parse_mode,
+      text: body
+    }
+    
+    if (thread_id) {
+      messageOptions.message_thread_id = thread_id;
+    }
+
     const r = await send_notification(
       `${url}${bot_token}/sendMessage`,
-      {
-        chat_id,
-        parse_mode,
-        text: body
-      }
+      messageOptions
     );
 
     core.debug(
