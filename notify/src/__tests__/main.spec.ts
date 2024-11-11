@@ -9,13 +9,12 @@ import { ErrorTypes } from '../reference/errors';
 
 describe("main function tests", function () {
   describe("If sending failes, check core.setFailed", function() {
-    let result;
     const setFailedMsg = "Request failed with status code 404";
     const tg_msg = "axios err 404";
 
     beforeAll( async function () {
       tg_message_update( tg_msg )
-      result = await FN()
+      await FN()
     })
 
     afterAll(async function() {
@@ -42,13 +41,11 @@ describe("main function tests", function () {
   })
 
   describe("if message is too long, check for proper setFailed", function() {
-    let result;
     const tg_msg = "error from send_notification() about message being too long";
 
     beforeAll( async function () {
       tg_message_update( tg_msg )
-
-      result = await FN()
+      await FN()
     })
 
     afterAll(async function() {
