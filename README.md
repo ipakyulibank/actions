@@ -9,3 +9,11 @@
 ## Fortify Security Check
 
 [README.md](fortify-security-check/)
+
+## Notify with Telegram Message
+ 
+ [README.md](notify/)
+
+ ## Path Filter on Changed Files
+
+ [README.md](path-filter/)
