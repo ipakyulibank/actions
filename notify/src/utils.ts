@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from "axios";
 import { ErrorTypes } from "./reference/errors";
 import { TG_MESSAGE_MAX_LENGTH } from "./configs/"

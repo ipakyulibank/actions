@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as core from "@actions/core";
 import { send_notification, stringify } from "./utils";
 
