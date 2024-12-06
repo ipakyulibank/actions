@@ -1,4 +1,4 @@
-name: Build and Test
+name: Build and Test jira-pull-requests
 
 on:
   pull_request:
