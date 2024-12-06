@@ -15,17 +15,21 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: path-filter
     steps:
+      - uses: actions/checkout@v2
       - uses: actions/setup-node@v1
         with:
-          node-version: 16.x
-      - uses: actions/checkout@v2
-      - run: cd path-filter && npm ci
-      - run: cd path-filter && npm run lint
-      - run: cd path-filter && npm test
-      
-      - name: Rebuild the index.js file
-        run: cd path-filter && npm run build
+          node-version: 20.x
+      - run: |
+          npm ci
+          npm outdated
+          npm update
+          npm run lint
+          npm test
+          npm run build
 
       - name: Compare the expected and actual dist/ directories
         run: |

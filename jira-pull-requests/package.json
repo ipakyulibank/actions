@@ -1,6 +1,6 @@
 {
   "name": "jira-pull-requests",
-  "version": "0.0.1",
+  "version": "2.0.10.e283b6d",
   "description": "This action will syncronise Pull Requests with Jira Issues",
   "type": "module",
   "main": "index.js",
