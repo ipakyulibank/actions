@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { GithubEventTypes } from '../reference/constants';
 import { mockActionCore, mockActionGithub } from '../../testHelpers';
 
