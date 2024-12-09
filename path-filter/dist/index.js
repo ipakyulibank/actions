@@ -36622,7 +36622,12 @@ async function githubComparison() {
         core.setOutput('result', result);
     }
     catch (error) {
-        core.setFailed(error?.message);
+        if (error instanceof Error) {
+            core.setFailed(error.message);
+        }
+        else {
+            core.setFailed(String(error));
+        }
     }
     finally {
         core.debug("Process finished...");
