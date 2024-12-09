@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import axios from "axios";
+import axios, { AxiosRequestConfig } from 'axios';
 import { ErrorTypes } from "./reference/errors";
 import { TG_MESSAGE_MAX_LENGTH } from "./configs/"
 import { HttpsProxyAgent } from 'https-proxy-agent';
