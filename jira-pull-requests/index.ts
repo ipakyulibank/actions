@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import main from './src/main';
 import * as core from '@actions/core';
 (async () => {

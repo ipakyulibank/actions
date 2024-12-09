@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { AxiosResponse, AxiosInstance } from "axios";
 
 export const findIssueDeveloper = async function (
