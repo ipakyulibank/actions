@@ -7,17 +7,6 @@ const ref = {
   other: [],
 };
 
-//const state_map: JiraIssueState[] = [
-//  "10000",
-//  "10002",
-//  "10003",
-//  "10004",
-//  "10005",
-//  "10006",
-//  "10007",
-//  "10008",
-//];
-
 const ts: JiraIssueTransitionList = {
   put_on_hold: { toState: "10007", id: "141", name: "Put On Hold" },
   dev_in_progress: { toState: "10008", id: "61", name: "Dev In Progress" },
