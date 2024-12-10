@@ -19,15 +19,22 @@ jobs:
       run:
         working-directory: path-filter
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20.x
-      - run: |
-          npm ci
-          npm run lint
-          npm test
-          npm run build
+
+      - name: NPM CI
+        run: npm ci
+
+      - name: Lint files
+        run: npm run lint
+
+      - name: NPM Test
+        run: npm test
+
+      - name: Rebuild the index.js file
+        run: npm run build
 
       - name: Compare the expected and actual dist/ directories
         run: |

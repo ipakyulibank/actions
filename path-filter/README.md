@@ -66,7 +66,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Path filter validation
         uses: ipakyulibank/actions/path-filter@betatest
         id: pathfilter
