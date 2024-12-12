@@ -1,6 +1,6 @@
 {
   "name": "path-filter",
-  "version": "2.0.10.d16b56d",
+  "version": "2.0.10",
   "description": "",
   "type": "module",
   "main": "index.ts",

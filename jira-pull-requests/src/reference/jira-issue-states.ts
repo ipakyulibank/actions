@@ -45,15 +45,10 @@ export const getTransition = (
   from: JiraIssueState,
   to: JiraIssueState
 ): JiraIssueTransition | null => {
-  const result = Object.entries(routes)
-    .filter(([k]) => k === from)
-    .map(([, v]) =>
-      v.filter((t: JiraIssueTransition): boolean => t.toState === to)
-    );
-  if (result.length && result[0].length) {
-    return result[0][0];
-  }
-  return null;
+  return (
+    routes[from]?.find((t: JiraIssueTransition): boolean => t.toState === to) ||
+    null
+  );
 };
 
 export const getStates = function (type: ReviewType | null = null): string[] {

@@ -1,6 +1,6 @@
 {
   "name": "telegram-notifier",
-  "version": "2.0.10.7451269",
+  "version": "2.0.10",
   "description": "",
   "type": "module",
   "main": "index.js",
