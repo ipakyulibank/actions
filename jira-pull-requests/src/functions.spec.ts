@@ -26,7 +26,7 @@ describe("Test extractIssueIdFromLine function", function () {
     expect(result).toEqual(expected);
   });
   it("should return null on wrong line", function () {
-    expect(extractIssueIdFromLine(key, "SOMESHIT-2134")).toBeNull;
+    expect(extractIssueIdFromLine(key, "SOMESHIT-2134")).toBeNull();
   });
 });
 

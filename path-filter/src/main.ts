@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as core from "@actions/core";
 import * as github from "@actions/github";
 import { localComparison, githubComparison } from "./functions";
@@ -14,12 +15,12 @@ export default async function (): Promise<string> {
     switch ( context.eventName ) {
       case GithubEventTypes.release: {
         core.startGroup(`localComparison() function is fired`);
-        
+
         result = await localComparison();
-        
+
         core.endGroup();
       } break;
-      
+
       case GithubEventTypes.pull_request: case GithubEventTypes.push: {
         core.startGroup(`githubComparison() function is fired`);
 
@@ -27,14 +28,14 @@ export default async function (): Promise<string> {
 
         core.endGroup();
       } break;
-    
+
       default: {
         throw new Error(`This eventName (${context.eventName}) is not handled`)
       }
     }
-  
-    
-  } catch (error: any) {    
+
+
+  } catch (error: any) {
     core.setFailed(error.message)
   }
 

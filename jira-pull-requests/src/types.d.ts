@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 type UserName = string;
 type UserJiraId = string;
 type UserGithubId = number;

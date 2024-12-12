@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as core from "@actions/core";
 import * as github from "@actions/github";
 import { exec, spawn } from "child_process";
@@ -88,7 +89,7 @@ export async function localComparison (): Promise<boolean> {
   const git_diff_result: string[] = await new Promise((resolve, reject) => {
     const result: string[] = [];
     const n = spawn('git',['diff', '--name-only', `tags/${found_prev}`, `tags/${current_release_tag}`])
-  
+
     n.stdout.on("data",(data: Buffer) => {
       result.push(data.toString().trim());
     })
@@ -103,7 +104,7 @@ export async function localComparison (): Promise<boolean> {
       reject(err);
     })
   })
-  
+
 
   core.debug(`Files of compared commits: ${ JSON.stringify( git_diff_result ) }`);
 
@@ -123,10 +124,10 @@ export async function githubComparison (): Promise<boolean> {
 
   const owner = context.repo.owner;
   const repo = context.repo.repo;
-  
+
   core.debug(`Variables used: ${ JSON.stringify({owner,repo,filter_string: filter, context}) }`);
   let base, head;
-    
+
   switch (context.eventName) {
     case GithubEventTypes.pull_request:
       base = context.payload.pull_request?.base?.sha
@@ -191,7 +192,7 @@ export async function githubComparison (): Promise<boolean> {
   }
 
   core.debug(`Files of compared commits: ${ Array.from( files ) }`);
-  
+
   const result = Array.from(files).some((v: any) => minimatch(v, filter, { matchBase: true }))
 
   core.debug(`at least 1 file matching 'filter_string' is ${result}`);

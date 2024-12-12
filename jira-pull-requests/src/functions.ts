@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as core from "@actions/core";
 import { Context } from "@actions/github/lib/context";
 import { getStates } from "./reference/jira-issue-states";

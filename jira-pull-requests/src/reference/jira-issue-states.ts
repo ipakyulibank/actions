@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import Graph from "node-dijkstra";
 
 const ref = {
@@ -5,17 +6,6 @@ const ref = {
   test: ["to test", "testing"],
   other: [],
 };
-
-const state_map: JiraIssueState[] = [
-  "10000",
-  "10002",
-  "10003",
-  "10004",
-  "10005",
-  "10006",
-  "10007",
-  "10008",
-];
 
 const ts: JiraIssueTransitionList = {
   put_on_hold: { toState: "10007", id: "141", name: "Put On Hold" },
@@ -55,15 +45,10 @@ export const getTransition = (
   from: JiraIssueState,
   to: JiraIssueState
 ): JiraIssueTransition | null => {
-  const result = Object.entries(routes)
-    .filter(([k, v]) => k === from)
-    .map(([k, v]) =>
-      v.filter((t: JiraIssueTransition): boolean => t.toState === to)
-    );
-  if (result.length && result[0].length) {
-    return result[0][0];
-  }
-  return null;
+  return (
+    routes[from]?.find((t: JiraIssueTransition): boolean => t.toState === to) ||
+    null
+  );
 };
 
 export const getStates = function (type: ReviewType | null = null): string[] {
