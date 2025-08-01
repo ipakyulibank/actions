@@ -27,6 +27,10 @@ inputs:
     description: "Fail the GitHub Workflow if issues with the specified and above severity are detected during the scan"
     required: false
     default: "Medium"
+  enable-report-comment:
+    description: "Add comment with summary to pull request conversation"
+    required: false
+    default: "true"
 
 runs:
   using: "composite"
@@ -69,7 +73,7 @@ runs:
           --appversion ${{ inputs.application }}:${{ inputs.application-version }}
 
     - name: Create pull request comment
-      if: ${{ github.event_name == 'pull_request' }}
+      if: ${{ github.event_name == 'pull_request' && inputs.enable-report-comment == 'true' }}
       uses: actions/github-script@v7
       with:
         github-token: ${{ inputs.github-token }}
