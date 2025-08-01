@@ -51,6 +51,12 @@ Fortify SSC SAST module version
 The GitHub token is required to create a comment in the Pull Request.
 If a temporary token generated for the GitHub Workflow is used, the following settings need to be configured in the GitHub Workflow job:
 
+```yaml
+permissions:
+  pull-requests: write
+  contents: read
+```
+
 **`exit-with-error-on-severity`** - OPTIONAL (default `Medium`)
 
 Fail the GitHub Workflow if issues with the specified and above severity are detected during the scan
@@ -58,12 +64,6 @@ Fail the GitHub Workflow if issues with the specified and above severity are det
 **`enable-report-comment`** - OPTIONAL (default `true`)
 
 Add comment with summary to pull request conversation
-
-```yaml
-permissions:
-  pull-requests: write
-  contents: read
-```
 
 **`sast-version`** - OPTIONAL
 
