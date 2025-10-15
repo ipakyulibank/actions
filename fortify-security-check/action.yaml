@@ -40,10 +40,6 @@ runs:
       run: |
         fcli ssc session login \
           --url ${{ inputs.fortify-ssc-url }} \
-          --ci-token ${{ inputs.ssc-token }}
-
-        fcli sc-sast session login \
-          --ssc-url ${{ inputs.fortify-ssc-url }} \
           -t ${{ inputs.ssc-token }} \
           -c ${{ inputs.ssc-sast-token }}
 
@@ -57,7 +53,7 @@ runs:
       run: |
         fcli sc-sast scan start \
           --publish-to ${{ inputs.application }}:${{ inputs.application-version }} \
-          -p package.zip \
+          -f package.zip \
           -v ${{ inputs.sast-version }} \
           --store sc_sast_scan
 
