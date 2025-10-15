@@ -191,8 +191,6 @@ runs:
       if: always()
       run: |
         fcli ssc session logout
-        fcli sc-sast session logout \
-          --no-revoke-token
 
     - name: Upload scan report as workflow artifact
       uses: actions/upload-artifact@v4
