@@ -16,6 +16,10 @@ inputs:
   application-version:
     description: "Application version in Fortify SSC"
     required: true
+  base-version:
+    description: "Base version for copying state when creating PR versions"
+    required: false
+    default: "master"
   sast-version:
     description: "Fortify SSC SAST module version"
     required: false
@@ -31,17 +35,60 @@ inputs:
     description: "Add comment with summary to pull request conversation"
     required: false
     default: "true"
+outputs:
+  total-issues:
+    description: "Total number of issues found"
+    value: ${{ steps.report.outputs.total_count }}
+  new-issues:
+    description: "Number of new/reintroduced issues"
+    value: ${{ steps.report.outputs.new_count }}
+  removed-issues:
+    description: "Number of removed issues"
+    value: ${{ steps.report.outputs.removed_count }}
+  critical-issues:
+    description: "Number of critical issues"
+    value: ${{ steps.report.outputs.critical_count }}
+  high-issues:
+    description: "Number of high issues"
+    value: ${{ steps.report.outputs.high_count }}
+  medium-issues:
+    description: "Number of medium issues"
+    value: ${{ steps.report.outputs.medium_count }}
+  low-issues:
+    description: "Number of low issues"
+    value: ${{ steps.report.outputs.low_count }}
+  scan-failed:
+    description: "Whether scan failed due to severity threshold"
+    value: ${{ steps.report.outputs.fail_build }}
 
 runs:
   using: "composite"
   steps:
-    - name: Login to Foritfy SSC
+    - name: Login to Fortify SSC
       shell: bash
       run: |
         fcli ssc session login \
           --url ${{ inputs.fortify-ssc-url }} \
           -t ${{ inputs.ssc-token }} \
           -c ${{ inputs.ssc-sast-token }}
+
+    - name: Setup SSC Application Version
+      if: ${{ inputs.application-version != inputs.base-version }}
+      shell: bash
+      run: |
+        echo "Checking if version ${{ inputs.application }}:${{ inputs.application-version }} exists..."
+
+        # Try to get the version directly - if it exists, command succeeds
+        if fcli ssc appversion get "${{ inputs.application }}:${{ inputs.application-version }}" -o json >/dev/null 2>&1; then
+          echo "Application version already exists: ${{ inputs.application }}:${{ inputs.application-version }}"
+        else
+          echo "Creating new application version: ${{ inputs.application }}:${{ inputs.application-version }}"
+          fcli ssc appversion create \
+            "${{ inputs.application }}:${{ inputs.application-version }}" \
+            --copy-from "${{ inputs.application }}:${{ inputs.base-version }}" \
+            --auto-required-attrs \
+            || echo "::warning::Failed to create version, it may already exist"
+        fi
 
     - name: Create package with source code
       shell: bash
@@ -123,25 +170,68 @@ runs:
           })
 
     - name: Generate vulnerability report
+      id: report
       shell: bash
       run: |
         report_file=$(mktemp)
 
         fcli ssc issue list \
           --av ${{ inputs.application }}:${{ inputs.application-version }} \
-          -o json | jq '[.[] | select(.suppress != true)]' > "$report_file"
+          --include visible,removed \
+          -o json | jq '[.[] | select(.suppressed != true)]' > "$report_file"
 
-        issues_count=$(jq 'length' "$report_file")
+        # Calculate statistics
+        total_count=$(jq 'length' "$report_file")
+        new_count=$(jq '[.[] | select(.scanStatus == "NEW" or .scanStatus == "REINTRODUCED")] | length' "$report_file")
+        removed_count=$(jq '[.[] | select(.scanStatus == "REMOVED")] | length' "$report_file")
+        critical_count=$(jq '[.[] | select(.friority == "Critical")] | length' "$report_file")
+        high_count=$(jq '[.[] | select(.friority == "High")] | length' "$report_file")
+        medium_count=$(jq '[.[] | select(.friority == "Medium")] | length' "$report_file")
+        low_count=$(jq '[.[] | select(.friority == "Low")] | length' "$report_file")
 
-        if [ "$issues_count" -gt 0 ]; then
-          echo "Found $issues_count items"
+        # Export outputs
+        echo "total_count=$total_count" >> $GITHUB_OUTPUT
+        echo "new_count=$new_count" >> $GITHUB_OUTPUT
+        echo "removed_count=$removed_count" >> $GITHUB_OUTPUT
+        echo "critical_count=$critical_count" >> $GITHUB_OUTPUT
+        echo "high_count=$high_count" >> $GITHUB_OUTPUT
+        echo "medium_count=$medium_count" >> $GITHUB_OUTPUT
+        echo "low_count=$low_count" >> $GITHUB_OUTPUT
 
-          echo "## Issues found" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Total number: **$issues_count**" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Priority | Issue Name | File | Line Number |" >> $GITHUB_STEP_SUMMARY
-          echo "|----------|------------|------|-------------|" >> $GITHUB_STEP_SUMMARY
+        # Generate improved GitHub Step Summary
+        {
+          echo "## Fortify SAST Scan Results"
+          echo ""
+          echo "**Application Version:** \`${{ inputs.application }}:${{ inputs.application-version }}\`"
+          echo "**Base Version:** \`${{ inputs.base-version }}\`"
+          echo ""
+          echo "### Summary"
+          echo "| Metric | Count |"
+          echo "|--------|-------|"
+          echo "| Total Issues | $total_count |"
+          echo "| New/Reintroduced | $new_count |"
+          echo "| Removed | $removed_count |"
+          echo ""
+          echo "### By Severity"
+          echo "| Severity | Count |"
+          echo "|----------|-------|"
+          echo "| Critical | $critical_count |"
+          echo "| High | $high_count |"
+          echo "| Medium | $medium_count |"
+          echo "| Low | $low_count |"
+        } >> $GITHUB_STEP_SUMMARY
+
+        # Add detailed issues table if there are any
+        if [ "$total_count" -gt 0 ]; then
+          {
+            echo ""
+            echo "<details>"
+            echo "<summary>Issue Details ($total_count issues)</summary>"
+            echo ""
+            echo "| Priority | Issue Name | File | Line |"
+            echo "|----------|------------|------|------|"
+          } >> $GITHUB_STEP_SUMMARY
+
           jq -r '
             sort_by(
               [
@@ -154,37 +244,51 @@ runs:
               ]
             ) |
             .[] |
-            "| \(.friority) | \(.issueName) | \(.fullFileName | sub("^Src/${{ inputs.application }}/";"")) | \(.lineNumber) |"
+            "| \(.friority) | \(.issueName) | \(.fullFileName | sub("^Src/${{ inputs.application }}/";"")) | \(.lineNumber // "-") |"
           ' "$report_file" >> $GITHUB_STEP_SUMMARY
 
-          severity_rank() {
-            case $1 in
-              Critical) echo 4 ;;
-              High) echo 3 ;;
-              Medium) echo 2 ;;
-              Low) echo 1 ;;
-              *) echo 0 ;;
-            esac
-          }
-          error_on_severity_rank=$(severity_rank "${{ inputs.exit-with-error-on-severity }}")
-
-          selected_priority_issues_count=$(jq --argjson rank "$error_on_severity_rank" '
-            map(select(
-              (.friority == "Critical" and 4 >= $rank) or
-              (.friority == "High" and 3 >= $rank) or
-              (.friority == "Medium" and 2 >= $rank) or
-              (.friority == "Low" and 1 >= $rank)
-            )) | length
-          ' "$report_file")
-          rm "$report_file"
-
-          if [ "$selected_priority_issues_count" -gt 0 ]; then
-            exit 1
-          fi
-        else
-          echo "No items with selected and above severity found."
-          rm "$report_file"
+          echo "</details>" >> $GITHUB_STEP_SUMMARY
         fi
+
+        # Check if we should fail the build
+        severity_rank() {
+          case $1 in
+            Critical) echo 4 ;;
+            High) echo 3 ;;
+            Medium) echo 2 ;;
+            Low) echo 1 ;;
+            *) echo 0 ;;
+          esac
+        }
+        error_on_severity_rank=$(severity_rank "${{ inputs.exit-with-error-on-severity }}")
+
+        selected_priority_issues_count=$(jq --argjson rank "$error_on_severity_rank" '
+          map(select(
+            (.friority == "Critical" and 4 >= $rank) or
+            (.friority == "High" and 3 >= $rank) or
+            (.friority == "Medium" and 2 >= $rank) or
+            (.friority == "Low" and 1 >= $rank)
+          )) | length
+        ' "$report_file")
+
+        rm "$report_file"
+
+        if [ "$selected_priority_issues_count" -gt 0 ]; then
+          echo "fail_build=true" >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Build will fail due to $selected_priority_issues_count issue(s) at or above ${{ inputs.exit-with-error-on-severity }} severity.**" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "fail_build=false" >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**No blocking issues found at or above ${{ inputs.exit-with-error-on-severity }} severity.**" >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: Fail if severity threshold exceeded
+      if: ${{ steps.report.outputs.fail_build == 'true' }}
+      shell: bash
+      run: |
+        echo "::error::Scan found issues at or above ${{ inputs.exit-with-error-on-severity }} severity"
+        exit 1
 
     - name: Logout from Fortify SSC
       shell: bash
