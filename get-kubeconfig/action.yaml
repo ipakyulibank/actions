@@ -84,6 +84,6 @@ runs:
       shell: bash
       run: |
         KUBECONFIG="$(pwd)/kubeconfig.yaml"
-        echo "${{ steps.get-kubeconfig.outputs.kubeconfig }}" > "$KUBECONFIG"
+        printf '%s' "${{ steps.get-kubeconfig.outputs.kubeconfig }}" > "$KUBECONFIG"
         chmod 600 "$KUBECONFIG"
         echo "KUBECONFIG=$KUBECONFIG" >> "$GITHUB_ENV"
