@@ -1,0 +1,89 @@
+name: "Get kubeconfig"
+description: "Get kubeconfig for rancher kubernetes cluster"
+inputs:
+  vault_url:
+    description: "Vault base URL"
+    required: true
+    default: "https://vault.ipakyulibank.uz"
+  oidc_audience:
+    description: "Audience used when requesting the OIDC token"
+    required: true
+    default: "vault"
+  jwt_mount:
+    description: "Vault JWT auth mount"
+    required: true
+    default: "github"
+  jwt_role:
+    description: "Vault JWT role name to use during authentication. This parameter is required when the auth backend does not define a default_role, or when you need to authenticate with a role different from the one set as default_role"
+    required: true
+    default: "github-cloud-general"
+  jwt_ttl:
+    description: "Time in seconds, after which Vault token expires"
+    required: true
+    default: "60"
+  rancher_mount:
+    description: "Vault rancher secrets backend mount"
+    required: true
+    default: "rancher"
+  use_ref:
+    description: "Add reference to branch or tag to vault path"
+    required: true
+    default: "false"
+  environment:
+    description: "Add environment name to vault path"
+    required: false
+  cluster:
+    description: "Rancher kubernetes cluster name"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Build path to kubeconfig in Vault
+      id: build-vault-path
+      shell: bash
+      run: |
+        PARTS=(
+          "${{ inputs.rancher_mount }}/kubeconfig"
+          "${{ github.repository }}"
+        )
+
+        # Add optional ref
+        if [ "${{ inputs.use_ref }}" = "true" ]; then
+          PARTS+=("${{ github.ref }}")
+        fi
+
+        # Add optional environment
+        if [ -n "${{ inputs.environment }}" ]; then
+          PARTS+=("${{ inputs.environment }}")
+        fi
+
+        # Add required cluster
+        PARTS+=("${{ inputs.cluster }}")
+
+        # Join with "/"
+        PATH_JOINED=$(IFS=/; echo "${PARTS[*]}")
+
+        echo "kubeconfig_path=$PATH_JOINED" >> "$GITHUB_OUTPUT"
+        echo
+
+    - name: Get kubeconfig from Vault
+      id: get-kubeconfig
+      uses: hashicorp/vault-action@v2
+      with:
+        url: ${{ inputs.vault_url }}
+        method: jwt
+        path: ${{ inputs.jwt_mount }}
+        jwtGithubAudience: ${{ inputs.oidc_audience }}
+        jwtTtl: ${{ inputs.jwt_ttl }}
+        role: ${{ inputs.jwt_role }}
+        secrets: ${{ steps.build-vault-path.outputs.kubeconfig_path }} kubeconfig
+        exportEnv: false
+
+    - name: Save kubeconfig to file
+      shell: bash
+      run: |
+        KUBECONFIG="$(pwd)/kubeconfig.yaml"
+        echo "${{ steps.get-kubeconfig.outputs.kubeconfig }}" > "$KUBECONFIG"
+        chmod 600 "$KUBECONFIG"
+        echo "KUBECONFIG=$KUBECONFIG" >> "$GITHUB_ENV"
