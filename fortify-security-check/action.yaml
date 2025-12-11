@@ -10,9 +10,6 @@ inputs:
   ssc-token:
     description: "Fortify SSC token"
     required: true
-  ssc-sast-token:
-    description: "Fortify SSC SAST shared token"
-    required: true
   application:
     description: "Application name in Fortify SSC"
     required: true
