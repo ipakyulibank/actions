@@ -23,7 +23,7 @@ inputs:
   sast-version:
     description: "Fortify SSC SAST module version"
     required: false
-    default: "25.2"
+    default: "23.2"
   github-token:
     description: "GitHub token"
     required: false
