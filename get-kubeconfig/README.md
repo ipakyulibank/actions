@@ -12,7 +12,7 @@ If the root CA is not trusted, the action will be unable to establish a secure H
 
 ### Action inputs
 
-**`vault_url`** - OPTIONAL (default `https://vault.ipakyulibank.uz`)
+**`vault_url`** - OPTIONAL (default `https://vault.internal.ipakyulibank.uz`)
 
 Vault base URL
 

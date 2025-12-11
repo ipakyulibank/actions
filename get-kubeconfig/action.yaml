@@ -4,7 +4,7 @@ inputs:
   vault_url:
     description: "Vault base URL"
     required: true
-    default: "https://vault.ipakyulibank.uz"
+    default: "https://vault.internal.ipakyulibank.uz"
   oidc_audience:
     description: "Audience used when requesting the OIDC token"
     required: true
