@@ -4,11 +4,11 @@ inputs:
   fortify-ssc-url:
     description: "Fortify SSC URL"
     required: true
+  fortify-sc-sast-url:
+    description: "Fortify SC SAST URL"
+    required: true
   ssc-token:
     description: "Fortify SSC token"
-    required: true
-  ssc-sast-token:
-    description: "Fortify SSC SAST shared token"
     required: true
   application:
     description: "Application name in Fortify SSC"
@@ -19,7 +19,7 @@ inputs:
   sast-version:
     description: "Fortify SSC SAST module version"
     required: false
-    default: "23.2"
+    default: "25.2"
   github-token:
     description: "GitHub token"
     required: false
@@ -40,8 +40,10 @@ runs:
       run: |
         fcli ssc session login \
           --url ${{ inputs.fortify-ssc-url }} \
+          --sc-sast-url ${{ inputs.fortify-sc-sast-url }} \
           -t ${{ inputs.ssc-token }} \
-          -c ${{ inputs.ssc-sast-token }}
+          --insecure \
+          -c clienttoken
 
     - name: Create package with source code
       shell: bash
