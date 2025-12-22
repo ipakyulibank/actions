@@ -45,7 +45,7 @@ Fortify SSC application version to use with this action. For PR scans, use `PR-{
 
 Base version for copying state when creating PR versions. Used to inherit issue suppression and other settings.
 
-**`sast-version`** - OPTIONAL (default `23.2`)
+**`sast-version`** - OPTIONAL (default `25.2`)
 
 Fortify SSC SAST module version
 
