@@ -31,6 +31,10 @@ inputs:
     description: "Add comment with summary to pull request conversation"
     required: false
     default: "true"
+  default-branch:
+    description: "Default branch name used as baseline for comparison"
+    required: false
+    default: "master"
 
 runs:
   using: "composite"
@@ -57,7 +61,7 @@ runs:
         fcli ssc appversion create \
           "${{ inputs.application }}:${{ inputs.application-version }}" \
           --issue-template "Prioritized High Risk Issue Template" \
-          --copy-from "${{ inputs.application }}:master" \
+          --copy-from "${{ inputs.application }}:${{ inputs.default-branch }}" \
           --auto-required-attrs \
           --skip-if-exists
 
@@ -164,9 +168,9 @@ runs:
           --av "${APP}:${VERSION}" \
           -o json | jq '[.[] | select(.suppressed != true)]' > /tmp/issues.json
         
-        if [ "$VERSION" != "master" ]; then
+        if [ "$VERSION" != "${{ inputs.default-branch }}" ]; then
           fcli ssc issue list \
-            --av "${APP}:master" \
+            --av "${APP}:${{ inputs.default-branch }}" \
             -o json > /tmp/master_issues.json
 
           jq -s '
