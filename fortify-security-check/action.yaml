@@ -68,7 +68,8 @@ runs:
       shell: bash
       run: |
         fcli ssc action run github-sast-report \
-          --appversion ${{ inputs.application }}:${{ inputs.application-version }}
+          --appversion ${{ inputs.application }}:${{ inputs.application-version }} \
+          --page-size 50
 
     - name: Create pull request comment
       if: ${{ github.event_name == 'pull_request' && inputs.enable-report-comment == 'true' }}
