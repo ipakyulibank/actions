@@ -31,10 +31,6 @@ inputs:
     description: "Add comment with summary to pull request conversation"
     required: false
     default: "true"
-  source-path-prefix:
-    description: "Path prefix to strip from file paths in reports (e.g., 'Src/myapp/')"
-    required: false
-    default: ""
 
 runs:
   using: "composite"
@@ -98,19 +94,26 @@ runs:
         script: |
           const { execSync } = require('child_process');
 
+          const issue_number = context.issue.number;
+          const owner = context.repo.owner;
+          const repo = context.repo.repo;
+          const sha = context.sha
+
+          function cleanPath(fullFileName) {
+              return fullFileName.replace(/^Src\//, '');
+          }
+
+          function issueKey(issue) {
+              return `${issue.fullFileName}:${issue.lineNumber}:${issue.issueName}`;
+          }
+
           function issueDescription(issue) {
-              const prefix = '${{ inputs.source-path-prefix }}';
-              const file = prefix ? issue.fullFileName.replace(prefix, '') : issue.fullFileName;
+              const file = cleanPath(issue.fullFileName);
               const line = issue.lineNumber == null ? '' : ':' + issue.lineNumber
 
               return `* ${issue.scanStatus} (${issue.engineCategory}) - ${issue.issueName}:
               [${file}${line}](https://github.com/${owner}/${repo}/blob/${sha}/${file}#L${issue.lineNumber == null ? '' : issue.lineNumber})`
           }
-
-          const issue_number = context.issue.number;
-          const owner = context.repo.owner;
-          const repo = context.repo.repo;
-          const sha = context.sha
 
           const output = execSync(
             'fcli ssc issue list --av ${{ inputs.application }}:${{ inputs.application-version }} --include visible,removed -o json',
@@ -121,16 +124,19 @@ runs:
           const newIssues = parsedOutput.filter(issue => issue.scanStatus === 'NEW' || issue.scanStatus === 'REINTRODUCED');
           const removedIssues = parsedOutput.filter(issue => issue.scanStatus === 'REMOVED');
 
+          // Убираем дубликаты: если issue есть и в NEW и в REMOVED — это изменение, не показываем в REMOVED
+          const newKeys = new Set(newIssues.map(issueKey));
+          const filteredRemovedIssues = removedIssues.filter(issue => !newKeys.has(issueKey(issue)));
+
           const newIssuesText = newIssues.length > 0
             ? newIssues.map(issueDescription).join("\n")
             : '* No new or re-introduced issues were detected';
 
-          const removedIssuesText = removedIssues.length > 0
-            ? removedIssues.map(issueDescription).join("\n")
+          const removedIssuesText = filteredRemovedIssues.length > 0
+            ? filteredRemovedIssues.map(issueDescription).join("\n")
             : '* No removed issues were detected';
 
-          const prefix = '## Fortify vulnerability summary';
-          const body = `${prefix}
+          const body = `## Fortify vulnerability summary
           Any issues listed below are based on comparing the latest scan results against the previous scan results for SSC application version **${{ inputs.application }}:${{ inputs.application-version }}**.
 
           To avoid interference from scans for other PR's or branches, it is recommended to track each PR/branch in a separate SSC application version.
@@ -169,8 +175,7 @@ runs:
           echo "| Priority | Issue Name | File | Line Number |" >> $GITHUB_STEP_SUMMARY
           echo "|----------|------------|------|-------------|" >> $GITHUB_STEP_SUMMARY
 
-          prefix='${{ inputs.source-path-prefix }}'
-          jq -r --arg prefix "$prefix" '
+          jq -r '
             sort_by(
               [
                 (if .friority == "Critical" then 1
@@ -182,7 +187,7 @@ runs:
               ]
             ) |
             .[] |
-            "| \(.friority) | \(.issueName) | \(.fullFileName | if $prefix != "" then sub($prefix;"") else . end) | \(.lineNumber) |"
+            "| \(.friority) | \(.issueName) | \(.fullFileName | sub("^Src/";"")) | \(.lineNumber) |"
           ' "$report_file" >> $GITHUB_STEP_SUMMARY
 
           severity_rank() {
