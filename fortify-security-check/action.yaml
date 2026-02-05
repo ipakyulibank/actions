@@ -157,16 +157,31 @@ runs:
     - name: Generate vulnerability report
       shell: bash
       run: |
-        report_file=$(mktemp)
+        APP="${{ inputs.application }}"
+        VERSION="${{ inputs.application-version }}"
 
         fcli ssc issue list \
-          --av ${{ inputs.application }}:${{ inputs.application-version }} \
-          -o json | jq '[.[] | select(.suppress != true)]' > "$report_file"
+          --av "${APP}:${VERSION}" \
+          -o json | jq '[.[] | select(.suppressed != true)]' > /tmp/issues.json
+        
+        if [ "$VERSION" != "master" ]; then
+          fcli ssc issue list \
+            --av "${APP}:master" \
+            -o json > /tmp/master_issues.json
 
-        issues_count=$(jq 'length' "$report_file")
+          jq -s '
+            (.[0] | map({key: "\(.fullFileName):\(.lineNumber):\(.issueName)", value: .}) | from_entries) as $master |
+            .[1] | map(select($master["\(.fullFileName):\(.lineNumber):\(.issueName)"] == null))
+          ' /tmp/master_issues.json /tmp/issues.json > /tmp/new_issues.json
+        
+          rm /tmp/master_issues.json
+          mv /tmp/new_issues.json /tmp/issues.json
+        fi
+        
+        issues_count=$(jq 'length' /tmp/issues.json)
 
         if [ "$issues_count" -gt 0 ]; then
-          echo "Found $issues_count items"
+          echo "Found $issues_count issues"
 
           echo "## Issues found" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -188,7 +203,7 @@ runs:
             ) |
             .[] |
             "| \(.friority) | \(.issueName) | \(.fullFileName | sub("^Src/";"")) | \(.lineNumber) |"
-          ' "$report_file" >> $GITHUB_STEP_SUMMARY
+          ' /tmp/issues.json >> $GITHUB_STEP_SUMMARY
 
           severity_rank() {
             case $1 in
@@ -208,15 +223,17 @@ runs:
               (.friority == "Medium" and 2 >= $rank) or
               (.friority == "Low" and 1 >= $rank)
             )) | length
-          ' "$report_file")
-          rm "$report_file"
+          ' /tmp/issues.json)
+        
+          rm /tmp/issues.json
 
           if [ "$selected_priority_issues_count" -gt 0 ]; then
+            echo "::error::Found $selected_priority_issues_count issues with severity ${{ inputs.exit-with-error-on-severity }} or higher"
             exit 1
           fi
         else
-          echo "No items with selected and above severity found."
-          rm "$report_file"
+          echo "No issues found"
+          rm /tmp/issues.json
         fi
 
     - name: Logout from Fortify SSC
