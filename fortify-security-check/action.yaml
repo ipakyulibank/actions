@@ -97,7 +97,10 @@ runs:
           const repo = context.repo.repo;
           const sha = context.sha
 
-          const output = execSync('fcli ssc issue list --av ${{ inputs.application }}:${{ inputs.application-version }} --include visible,removed -o json');
+          const output = execSync(
+            'fcli ssc issue list --av ${{ inputs.application }}:${{ inputs.application-version }} --include visible,removed -o json',
+            { maxBuffer: 50 * 1024 * 1024 }
+          );
           const parsedOutput = JSON.parse(output).filter(item => !item.suppressed);
 
           const newIssues = parsedOutput.filter(issue => issue.scanStatus === 'NEW' || issue.scanStatus === 'REINTRODUCED');
