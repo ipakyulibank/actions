@@ -55,6 +55,16 @@ runs:
           --insecure \
           -c clienttoken
 
+    - name: Ensure application version exists
+      shell: bash
+      run: |
+        fcli ssc appversion create \
+          "${{ inputs.application }}:${{ inputs.application-version }}" \
+          --issue-template "Prioritized High Risk Issue Template" \
+          --copy-from "${{ inputs.application }}:master" \
+          --auto-required-attrs \
+          --skip-if-exists
+
     - name: Create package with source code
       shell: bash
       run: |
