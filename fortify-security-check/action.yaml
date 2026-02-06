@@ -101,7 +101,7 @@ runs:
           const issue_number = context.issue.number;
           const owner = context.repo.owner;
           const repo = context.repo.repo;
-          const sha = context.sha
+          const sha = context.sha;
 
           function cleanPath(fullFileName) {
               return fullFileName.replace(/^Src\//, '');
@@ -113,42 +113,84 @@ runs:
 
           function issueDescription(issue) {
               const file = cleanPath(issue.fullFileName);
-              const line = issue.lineNumber == null ? '' : ':' + issue.lineNumber
+              const line = issue.lineNumber == null ? '' : ':' + issue.lineNumber;
 
-              return `* ${issue.scanStatus} (${issue.engineCategory}) - ${issue.issueName}:
-              [${file}${line}](https://github.com/${owner}/${repo}/blob/${sha}/${file}#L${issue.lineNumber == null ? '' : issue.lineNumber})`
+              return `* **${issue.friority}** (${issue.engineCategory}) - ${issue.issueName}: [${file}${line}](https://github.com/${owner}/${repo}/blob/${sha}/${file}#L${issue.lineNumber == null ? '' : issue.lineNumber})`;
           }
 
-          const output = execSync(
-            'fcli ssc issue list --av ${{ inputs.application }}:${{ inputs.application-version }} --include visible,removed -o json',
+          // Получаем issues текущей версии (только не-suppressed)
+          const currentOutput = execSync(
+            'fcli ssc issue list --av ${{ inputs.application }}:${{ inputs.application-version }} -o json',
             { maxBuffer: 50 * 1024 * 1024 }
           );
-          const parsedOutput = JSON.parse(output).filter(item => !item.suppressed);
+          const currentIssues = JSON.parse(currentOutput).filter(item => !item.suppressed);
 
-          const newIssues = parsedOutput.filter(issue => issue.scanStatus === 'NEW' || issue.scanStatus === 'REINTRODUCED');
-          const removedIssues = parsedOutput.filter(issue => issue.scanStatus === 'REMOVED');
+          // Получаем ВСЕ issues из default branch (включая suppressed для корректного сравнения)
+          const masterOutput = execSync(
+            'fcli ssc issue list --av ${{ inputs.application }}:${{ inputs.default-branch }} -o json',
+            { maxBuffer: 50 * 1024 * 1024 }
+          );
+          const masterIssues = JSON.parse(masterOutput);
 
-          // Убираем дубликаты: если issue есть и в NEW и в REMOVED — это изменение, не показываем в REMOVED
-          const newKeys = new Set(newIssues.map(issueKey));
-          const filteredRemovedIssues = removedIssues.filter(issue => !newKeys.has(issueKey(issue)));
+          // Создаём Set ключей для быстрого поиска
+          const masterKeys = new Set(masterIssues.map(issueKey));
+          const currentKeys = new Set(currentIssues.map(issueKey));
 
-          const newIssuesText = newIssues.length > 0
-            ? newIssues.map(issueDescription).join("\n")
-            : '* No new or re-introduced issues were detected';
+          // Фильтрация по severity
+          const severityRank = { 'Critical': 4, 'High': 3, 'Medium': 2, 'Low': 1 };
+          const minSeverityRank = severityRank['${{ inputs.exit-with-error-on-severity }}'] || 0;
+          const meetsMinSeverity = (issue) => (severityRank[issue.friority] || 0) >= minSeverityRank;
 
-          const removedIssuesText = filteredRemovedIssues.length > 0
-            ? filteredRemovedIssues.map(issueDescription).join("\n")
-            : '* No removed issues were detected';
+          // Новые issues = есть в текущей версии, но нет в master (с учётом severity)
+          const newIssues = currentIssues
+            .filter(issue => !masterKeys.has(issueKey(issue)))
+            .filter(meetsMinSeverity);
+
+          // Исправленные issues = не-suppressed в master, но нет в текущей версии (с учётом severity)
+          const removedIssues = masterIssues
+            .filter(issue => !issue.suppressed)
+            .filter(issue => !currentKeys.has(issueKey(issue)))
+            .filter(meetsMinSeverity);
+
+          // Сортируем по приоритету (Critical первым)
+          const priorityOrder = { 'Critical': 1, 'High': 2, 'Medium': 3, 'Low': 4 };
+          const sortByPriority = (a, b) => (priorityOrder[a.friority] || 5) - (priorityOrder[b.friority] || 5);
+          newIssues.sort(sortByPriority);
+          removedIssues.sort(sortByPriority);
+
+          const maxIssues = 10;
+          const runUrl = `${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`;
+
+          let newIssuesText;
+          if (newIssues.length > 0) {
+            const displayedNew = newIssues.slice(0, maxIssues);
+            newIssuesText = displayedNew.map(issueDescription).join("\n");
+            if (newIssues.length > maxIssues) {
+              newIssuesText += `\n\n... and ${newIssues.length - maxIssues} more issues. [View full report](${runUrl})`;
+            }
+          } else {
+            newIssuesText = '* No new or re-introduced issues were detected';
+          }
+
+          let removedIssuesText;
+          if (removedIssues.length > 0) {
+            const displayedRemoved = removedIssues.slice(0, maxIssues);
+            removedIssuesText = displayedRemoved.map(issueDescription).join("\n");
+            if (removedIssues.length > maxIssues) {
+              removedIssuesText += `\n\n... and ${removedIssues.length - maxIssues} more issues. [View full report](${runUrl})`;
+            }
+          } else {
+            removedIssuesText = '* No removed issues were detected';
+          }
 
           const body = `## Fortify vulnerability summary
-          Any issues listed below are based on comparing the latest scan results against the previous scan results for SSC application version **${{ inputs.application }}:${{ inputs.application-version }}**.
+          Comparison of **${{ inputs.application }}:${{ inputs.application-version }}** against **${{ inputs.application }}:${{ inputs.default-branch }}**
+          Showing issues with severity **${{ inputs.exit-with-error-on-severity }}** or higher.
 
-          To avoid interference from scans for other PR's or branches, it is recommended to track each PR/branch in a separate SSC application version.
-
-          ### New Issues
+          ### New Issues (${newIssues.length})
           ${newIssuesText}
 
-          ### Removed Issues
+          ### Fixed Issues (${removedIssues.length})
           ${removedIssuesText}`;
 
           await github.rest.issues.createComment({
@@ -163,25 +205,27 @@ runs:
       run: |
         APP="${{ inputs.application }}"
         VERSION="${{ inputs.application-version }}"
+        DEFAULT_BRANCH="${{ inputs.default-branch }}"
 
         fcli ssc issue list \
           --av "${APP}:${VERSION}" \
           -o json | jq '[.[] | select(.suppressed != true)]' > /tmp/issues.json
-        
-        if [ "$VERSION" != "${{ inputs.default-branch }}" ]; then
+
+        if [ "$VERSION" != "$DEFAULT_BRANCH" ]; then
+          # Получаем ВСЕ issues из default branch (включая suppressed для корректного сравнения)
           fcli ssc issue list \
-            --av "${APP}:${{ inputs.default-branch }}" \
-            -o json > /tmp/master_issues.json
+            --av "${APP}:${DEFAULT_BRANCH}" \
+            -o json > /tmp/baseline_issues.json
 
           jq -s '
-            (.[0] | map({key: "\(.fullFileName):\(.lineNumber):\(.issueName)", value: .}) | from_entries) as $master |
-            .[1] | map(select($master["\(.fullFileName):\(.lineNumber):\(.issueName)"] == null))
-          ' /tmp/master_issues.json /tmp/issues.json > /tmp/new_issues.json
-        
-          rm /tmp/master_issues.json
+            (.[0] | map({key: "\(.fullFileName):\(.lineNumber):\(.issueName)", value: .}) | from_entries) as $baseline |
+            .[1] | map(select($baseline["\(.fullFileName):\(.lineNumber):\(.issueName)"] == null))
+          ' /tmp/baseline_issues.json /tmp/issues.json > /tmp/new_issues.json
+
+          rm /tmp/baseline_issues.json
           mv /tmp/new_issues.json /tmp/issues.json
         fi
-        
+
         issues_count=$(jq 'length' /tmp/issues.json)
 
         if [ "$issues_count" -gt 0 ]; then
@@ -228,7 +272,7 @@ runs:
               (.friority == "Low" and 1 >= $rank)
             )) | length
           ' /tmp/issues.json)
-        
+
           rm /tmp/issues.json
 
           if [ "$selected_priority_issues_count" -gt 0 ]; then
