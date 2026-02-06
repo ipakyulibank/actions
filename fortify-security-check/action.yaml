@@ -36,6 +36,14 @@ inputs:
     required: false
     default: "master"
 
+outputs:
+  issues-count:
+    description: "Number of issues found with specified severity or higher"
+    value: ${{ steps.report.outputs.issues-count }}
+  report-url:
+    description: "URL to the full scan report in GitHub Actions"
+    value: ${{ steps.report.outputs.report-url }}
+
 runs:
   using: "composite"
   steps:
@@ -201,11 +209,15 @@ runs:
           })
 
     - name: Generate vulnerability report
+      id: report
       shell: bash
       run: |
         APP="${{ inputs.application }}"
         VERSION="${{ inputs.application-version }}"
         DEFAULT_BRANCH="${{ inputs.default-branch }}"
+
+        # Set report URL output
+        echo "report-url=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> $GITHUB_OUTPUT
 
         fcli ssc issue list \
           --av "${APP}:${VERSION}" \
@@ -275,12 +287,15 @@ runs:
 
           rm /tmp/issues.json
 
+          echo "issues-count=$selected_priority_issues_count" >> $GITHUB_OUTPUT
+
           if [ "$selected_priority_issues_count" -gt 0 ]; then
             echo "::error::Found $selected_priority_issues_count issues with severity ${{ inputs.exit-with-error-on-severity }} or higher"
             exit 1
           fi
         else
           echo "No issues found"
+          echo "issues-count=0" >> $GITHUB_OUTPUT
           rm /tmp/issues.json
         fi
 
