@@ -24,7 +24,7 @@ Audience used when requesting the OIDC token
 
 Vault JWT auth mount
 
-**`jwt_role`** - OPTIONAL (default `github-cloud-general`)
+**`jwt_role`** - OPTIONAL (default `github-general`)
 
 Vault JWT role name to use during authentication. This parameter is required when the auth backend does not define a default_role, or when you need to authenticate with a role different from the one set as default_role
 

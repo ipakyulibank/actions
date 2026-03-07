@@ -16,7 +16,7 @@ inputs:
   jwt_role:
     description: "Vault JWT role name to use during authentication. This parameter is required when the auth backend does not define a default_role, or when you need to authenticate with a role different from the one set as default_role"
     required: true
-    default: "github-cloud-general"
+    default: "github-general"
   jwt_ttl:
     description: "Time in seconds, after which Vault token expires"
     required: true
